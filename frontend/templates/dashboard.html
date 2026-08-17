@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}工作台 - OfferFlow{% endblock %}
+{% block page_title %}工作台{% endblock %}
+{% block active_page %}dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/pulse-surface.css?v=20260603pulse1">
+{% endblock %}
+
+{% block header_actions %}
+<a href="/campus" class="btn btn-primary btn-sm">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    添加校招
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <header class="dashboard-hero">
+        <p class="dashboard-hero__eyebrow">概览</p>
+        <h2 class="dashboard-hero__title">投递与机会</h2>
+        <p class="dashboard-hero__lead">本地开源版 · 无需登录 · 数据保存在 SQLite</p>
+    </header>
+
+    <section class="dashboard-summary" id="statsGrid" aria-label="投递数据概览">
+        <article class="dashboard-summary__item settings-pulse-surface settings-pulse-surface--live">
+            <div class="dashboard-summary__icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            </div>
+            <div class="dashboard-summary__body">
+                <div class="skeleton" style="height:1.75rem;width:52px;margin-bottom:2px;border-radius:6px;"></div>
+                <div class="dashboard-summary__label">实习投递</div>
+            </div>
+        </article>
+        <article class="dashboard-summary__item settings-pulse-surface settings-pulse-surface--live">
+            <div class="dashboard-summary__icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 10v6M2 10l10-5 10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+            </div>
+            <div class="dashboard-summary__body">
+                <div class="skeleton" style="height:1.75rem;width:52px;margin-bottom:2px;border-radius:6px;"></div>
+                <div class="dashboard-summary__label">校招投递</div>
+            </div>
+        </article>
+        <article class="dashboard-summary__item settings-pulse-surface settings-pulse-surface--live">
+            <div class="dashboard-summary__icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="dashboard-summary__body">
+                <div class="skeleton" style="height:1.75rem;width:40px;margin-bottom:2px;border-radius:6px;"></div>
+                <div class="dashboard-summary__label">待处理</div>
+            </div>
+        </article>
+        <article class="dashboard-summary__item settings-pulse-surface settings-pulse-surface--live">
+            <div class="dashboard-summary__icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="dashboard-summary__body">
+                <div class="skeleton" style="height:1.75rem;width:40px;margin-bottom:2px;border-radius:6px;"></div>
+                <div class="dashboard-summary__label">已拿 Offer</div>
+            </div>
+        </article>
+    </section>
+
+    <section class="dashboard-section" aria-labelledby="dash-recent-heading">
+        <div class="dashboard-section__head">
+            <h3 id="dash-recent-heading" class="dashboard-section__title">最近投递</h3>
+            <div class="dashboard-section__actions">
+                <a href="/internships" class="btn btn-ghost btn-sm">实习列表</a>
+                <a href="/campus" class="btn btn-ghost btn-sm">校招列表</a>
+            </div>
+        </div>
+        <div class="dashboard-recent-grid">
+            <div class="card dashboard-feed-card settings-pulse-surface settings-pulse-surface--live">
+                <div class="card-header">
+                    <div class="card-title">实习</div>
+                    <a href="/internships" class="btn btn-ghost btn-sm">全部</a>
+                </div>
+                <div id="recentIntern"></div>
+            </div>
+            <div class="card dashboard-feed-card settings-pulse-surface settings-pulse-surface--live">
+                <div class="card-header">
+                    <div class="card-title">校招</div>
+                    <a href="/campus" class="btn btn-ghost btn-sm">全部</a>
+                </div>
+                <div id="recentCampus"></div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function initDashboardPage() {
+    if (!document.getElementById('statsGrid')) return;
+    loadStats();
+    loadRecent();
+}
+
+if (!window.__ofDashboardInit) {
+    window.__ofDashboardInit = true;
+    document.addEventListener('turbo:load', initDashboardPage);
+}
+
+async function loadStats() {
+    try {
+        const d = await api('/api/dashboard/stats');
+        var vals = [
+            d.stats.total_internships,
+            d.stats.total_jobs,
+            d.stats.pending_internships + d.stats.pending_jobs,
+            d.stats.offered_internships + d.stats.offered_jobs
+        ];
+        var ids = ['statIntern', 'statCampus', 'statPending', 'statOffer'];
+        document.querySelectorAll('#statsGrid .dashboard-summary__item').forEach(function (item, i) {
+            var skeleton = item.querySelector('.skeleton');
+            if (skeleton) {
+                var v = document.createElement('div');
+                v.className = 'dashboard-summary__value';
+                v.id = ids[i];
+                v.textContent = vals[i];
+                skeleton.replaceWith(v);
+            }
+        });
+    } catch (e) { console.error(e); }
+}
+
+function normalizeDashStatus(status) {
+    return (status === 'replied' ? 'sent' : status) || 'pending';
+}
+
+function isDashPending(item) {
+    return normalizeDashStatus(item.status) === 'pending';
+}
+
+function dashAppliedSortTs(item) {
+    if (item.applied_at) return new Date(item.applied_at).getTime();
+    if (item.created_at) return new Date(item.created_at).getTime();
+    return 0;
+}
+
+function sortRecentApplications(items) {
+    return items.slice().sort(function (a, b) {
+        var aPending = isDashPending(a);
+        var bPending = isDashPending(b);
+        if (aPending !== bPending) return aPending ? 1 : -1;
+        return dashAppliedSortTs(b) - dashAppliedSortTs(a);
+    });
+}
+
+async function loadRecent() {
+    try {
+        const [ir, cr] = await Promise.all([
+            api('/api/internships?page_size=80'),
+            api('/api/campus?page_size=80')
+        ]);
+        renderRecentList('recentIntern', sortRecentApplications(ir.items || []).slice(0, 5), '/internships');
+        renderRecentList('recentCampus', sortRecentApplications(cr.items || []).slice(0, 5), '/campus');
+    } catch (e) { console.error(e); }
+}
+
+const statusMap = {
+    pending: { label: '未投递', cls: 'badge-pending' },
+    sent: { label: '已投递', cls: 'badge-sent' },
+    interview: { label: '面试中', cls: 'badge-interview' },
+    offered: { label: 'Offer', cls: 'badge-offer' },
+    rejected: { label: '已拒', cls: 'badge-reject' },
+    accepted: { label: '已接受', cls: 'badge-offer' }
+};
+
+function renderRecentList(elId, items, href) {
+    var el = document.getElementById(elId);
+    if (!el) return;
+    if (!items.length) {
+        el.innerHTML = '<div class="empty-state"><div class="empty-title">暂无记录</div><div class="empty-desc"><a href="' + href + '">去添加</a></div></div>';
+        return;
+    }
+    el.innerHTML = items.map(function (x) {
+        var st = statusMap[normalizeDashStatus(x.status)] || statusMap.pending;
+        return '<a class="dashboard-feed-row" href="' + href + '">' +
+            '<div class="dashboard-feed-row__main">' +
+            '<div class="dashboard-feed-row__company">' + escHtml(x.company) + '</div>' +
+            '<div class="dashboard-feed-row__pos">' + escHtml(x.position || '') + '</div>' +
+            '</div>' +
+            '<span class="badge ' + st.cls + '">' + st.label + '</span>' +
+            '</a>';
+    }).join('');
+}
+
+function escHtml(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+document.addEventListener('DOMContentLoaded', initDashboardPage);
+</script>
+{% endblock %}

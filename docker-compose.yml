@@ -1,0 +1,14 @@
+services:
+  offerflow:
+    build: .
+    ports:
+      - "8001:8001"
+    environment:
+      ENV: production
+      PORT: "8001"
+      DATABASE_URL: sqlite:////app/data/offerflow.db
+      # 生产 / 长期使用请改成自己的随机串；也可用 .env 覆盖
+      SECRET_KEY: ${SECRET_KEY:-offerflow-docker-dev-key-change-me}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

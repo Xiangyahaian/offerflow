@@ -1,0 +1,101 @@
+/* 实习 / 校招 / 岗位速递 — 表格行拖拽排序 */
+.data-table tbody tr.of-row--dragging,
+.jl-catalog-table tbody tr.of-row--dragging {
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 6px 20px -8px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+.data-table tbody tr.of-row--dragging td,
+.jl-catalog-table tbody tr.of-row--dragging td {
+  opacity: 1 !important;
+  background: var(--surface) !important;
+  color: inherit;
+}
+
+.data-table tbody tr.of-row--dragging td:first-child,
+.jl-catalog-table tbody tr.of-row--dragging td:first-child {
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.data-table tbody tr.of-row-drop-target--before td,
+.jl-catalog-table tbody tr.of-row-drop-target--before td {
+  box-shadow: inset 0 3px 0 var(--primary);
+}
+
+.data-table tbody tr.of-row-drop-target--after td,
+.jl-catalog-table tbody tr.of-row-drop-target--after td {
+  box-shadow: inset 0 -3px 0 var(--primary);
+}
+
+.data-table .of-drag-cell,
+.jl-catalog-table .jl-drag-cell {
+  width: 48px;
+  padding: 0 6px !important;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.data-table .of-row-drag-handle,
+.jl-catalog-table .jl-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 36px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  user-select: none;
+  cursor: grab;
+  touch-action: none;
+  transition:
+    color 0.15s var(--ease),
+    background 0.15s var(--ease);
+}
+
+.data-table .of-row-drag-handle:hover,
+.jl-catalog-table .jl-drag-handle:hover:not(.jl-drag-handle--disabled) {
+  color: var(--primary-active);
+  background: color-mix(in srgb, var(--primary-light) 70%, var(--surface));
+}
+
+.data-table .of-row-drag-handle:active,
+.jl-catalog-table .jl-drag-handle:active {
+  cursor: grabbing;
+}
+
+.data-table .of-row-drag-handle__num,
+.jl-catalog-table .jl-drag-handle__num {
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 1.1em;
+  line-height: 1;
+}
+
+.data-table .of-row-drag-handle__grip,
+.jl-catalog-table .jl-drag-handle__grip {
+  width: 10px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.4;
+}
+
+.data-table .of-row-drag-handle:hover .of-row-drag-handle__grip,
+.jl-catalog-table .jl-drag-handle:hover .of-row-drag-handle__grip {
+  opacity: 0.9;
+}
+
+/* 岗位速递旧样式：拖动时不再整行发灰 */
+.jl-catalog-table tbody tr.jl-catalog-row--dragging td {
+  opacity: 1 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-table .of-row-drag-handle,
+  .jl-catalog-table .jl-drag-handle {
+    transition: none;
+  }
+}

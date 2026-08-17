@@ -1,0 +1,259 @@
+/* 邮件模拟进度浮层 · 全站右上角 */
+.mail-demo-toast-host {
+    position: fixed;
+    top: calc(var(--header-height, 60px) + 14px);
+    right: 18px;
+    z-index: 100500;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    pointer-events: none;
+    max-width: min(380px, calc(100vw - 24px));
+}
+
+.mail-demo-toast {
+    --toast-ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+    width: min(360px, calc(100vw - 32px));
+    padding: 14px 16px 16px;
+    pointer-events: auto;
+    border-radius: 16px;
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+    box-shadow:
+        0 1px 0 color-mix(in srgb, #fff 60%, transparent) inset,
+        0 20px 44px -18px color-mix(in srgb, var(--primary) 22%, transparent),
+        0 12px 32px -12px rgba(15, 23, 42, 0.12);
+    transform: translate3d(28px, -10px, 0) scale(0.97);
+    opacity: 0;
+    filter: blur(4px);
+    transition: filter 0.3s;
+}
+
+.mail-demo-toast.is-visible {
+    animation: mail-demo-toast-in 0.65s var(--toast-ease-enter) forwards;
+}
+
+.mail-demo-toast.is-leaving {
+    animation: mail-demo-toast-out 0.42s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    pointer-events: none;
+}
+
+@keyframes mail-demo-toast-in {
+    to {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 1;
+        filter: blur(0);
+    }
+}
+
+@keyframes mail-demo-toast-out {
+    to {
+        transform: translate3d(28px, -10px, 0) scale(0.98);
+        opacity: 0;
+        filter: blur(3px);
+    }
+}
+
+.mail-demo-toast__close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.mail-demo-toast__close:hover {
+    background: var(--bg);
+    color: var(--text);
+}
+
+.mail-demo-toast__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-right: 24px;
+    margin-bottom: 12px;
+}
+
+.mail-demo-toast__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: var(--primary);
+    box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--primary) 50%, transparent);
+}
+
+.mail-demo-toast__icon--ok {
+    font-size: 1rem;
+    font-weight: 800;
+    background: var(--success, #22c55e);
+    box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--success, #22c55e) 45%, transparent);
+}
+
+.mail-demo-toast__titles strong {
+    display: block;
+    font-size: 0.84rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.02em;
+}
+
+.mail-demo-toast__titles span {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+}
+
+.mail-demo-toast__steps {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mail-demo-toast__step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border-light);
+    background: var(--bg);
+    opacity: 0.42;
+    transform: translateX(-4px);
+    transition:
+        opacity 0.28s,
+        transform 0.28s var(--ease-expo-out),
+        border-color 0.28s,
+        background 0.28s;
+}
+
+.mail-demo-toast__step.is-active {
+    opacity: 1;
+    transform: translateX(0);
+    border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+    background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+}
+
+.mail-demo-toast__step.is-done {
+    opacity: 1;
+    transform: translateX(0);
+    border-color: color-mix(in srgb, var(--success, #22c55e) 22%, var(--border));
+}
+
+.mail-demo-toast__step-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--text-tertiary);
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    transition: all 0.28s;
+}
+
+.mail-demo-toast__step.is-active .mail-demo-toast__step-dot {
+    color: var(--primary);
+    border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+}
+
+.mail-demo-toast__step.is-done .mail-demo-toast__step-dot {
+    color: #fff;
+    background: var(--success, #22c55e);
+    border-color: transparent;
+    font-size: 0;
+}
+
+.mail-demo-toast__step.is-done .mail-demo-toast__step-dot::after {
+    content: "✓";
+    font-size: 0.65rem;
+}
+
+.mail-demo-toast__step-text strong {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.mail-demo-toast__step-text span {
+    font-size: 0.64rem;
+    color: var(--text-tertiary);
+}
+
+.mail-demo-toast__summary {
+    margin: 0 0 10px;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.mail-demo-toast__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mail-demo-toast__links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.mail-demo-toast__links a:hover {
+    background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+}
+
+@media (max-width: 640px) {
+    .mail-demo-toast-host {
+        top: calc(var(--header-height, 60px) + 8px);
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        align-items: stretch;
+    }
+
+    .mail-demo-toast {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mail-demo-toast,
+    .mail-demo-toast__step {
+        transition: none;
+        animation: none;
+        filter: none;
+        transform: none;
+        opacity: 1;
+    }
+}

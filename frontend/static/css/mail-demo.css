@@ -1,0 +1,525 @@
+/* 邮件模拟 · 邮箱读取页选择弹窗 + 全站右上角进度浮层 */
+
+.mail-demo {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.32s var(--ease), visibility 0.32s;
+}
+
+.mail-demo.is-open {
+    pointer-events: auto;
+    opacity: 1;
+    visibility: visible;
+}
+
+.mail-demo__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 14, 24, 0.46);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    opacity: 0;
+    transition: opacity 0.36s var(--ease);
+}
+
+.mail-demo.is-open .mail-demo__backdrop {
+    opacity: 1;
+}
+
+.mail-demo__dialog {
+    position: relative;
+    width: min(600px, 100%);
+    max-height: min(90vh, 820px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 24px;
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--border) 55%, white 20%);
+    box-shadow:
+        0 32px 88px -28px rgba(8, 12, 24, 0.42),
+        0 0 0 1px color-mix(in srgb, white 55%, transparent) inset;
+    overflow: hidden;
+    transform: translateY(20px) scale(0.97);
+    opacity: 0;
+    transition:
+        transform 0.44s var(--ease-expo-out),
+        opacity 0.34s var(--ease);
+}
+
+.mail-demo.is-open .mail-demo__dialog {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+/* ── Hero 区 ── */
+.mail-demo__hero {
+    position: relative;
+    padding: 22px 22px 18px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--surface);
+}
+
+.mail-demo__hero-glow {
+    display: none;
+}
+
+.mail-demo__head {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.mail-demo__head-copy {
+    min-width: 0;
+}
+
+.mail-demo__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+}
+
+.mail-demo__badge-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
+}
+
+.mail-demo__head h2 {
+    margin: 0;
+    font-size: 1.42rem;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.15;
+    color: var(--text);
+}
+
+.mail-demo__head p {
+    margin: 8px 0 0;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-width: 30em;
+}
+
+.mail-demo__close {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 11px;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: color 0.2s, transform 0.22s var(--ease-spring);
+}
+
+.mail-demo__close:hover {
+    color: var(--text);
+    transform: scale(1.04);
+}
+
+/* ── 流程条 ── */
+.mail-demo__flow {
+    position: relative;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.mail-demo__flow-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 2px;
+    border: none;
+    background: transparent;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: mail-demo-rise 0.48s var(--ease-expo-out) forwards;
+}
+
+.mail-demo.is-open .mail-demo__flow-item:nth-child(1) { animation-delay: 0.06s; }
+.mail-demo.is-open .mail-demo__flow-item:nth-child(2) { animation-delay: 0.11s; }
+.mail-demo.is-open .mail-demo__flow-item:nth-child(3) { animation-delay: 0.16s; }
+
+.mail-demo__flow-icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    background: transparent;
+}
+
+.mail-demo__flow-text {
+    font-size: 0.7rem;
+    line-height: 1.35;
+    color: var(--text-secondary);
+}
+
+.mail-demo__flow-text strong {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+@keyframes mail-demo-rise {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 主体 ── */
+.mail-demo__body {
+    position: relative;
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 22px 8px;
+}
+
+.mail-demo__section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.mail-demo__section-head h3 {
+    margin: 0;
+    font-size: 0.88rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text);
+}
+
+.mail-demo__section-head span {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+}
+
+.mail-demo__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+/* ── 公司卡片 ── */
+.mail-demo__card {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    text-align: left;
+    padding: 12px 12px 12px 11px;
+    border-radius: 16px;
+    border: 1.5px solid var(--border-light);
+    background: var(--surface);
+    cursor: pointer;
+    overflow: hidden;
+    transition:
+        transform 0.26s var(--ease-spring),
+        border-color 0.26s,
+        box-shadow 0.26s,
+        background 0.26s;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: mail-demo-rise 0.46s var(--ease-expo-out) forwards;
+}
+
+.mail-demo.is-open .mail-demo__card:nth-child(1) { animation-delay: 0.1s; }
+.mail-demo.is-open .mail-demo__card:nth-child(2) { animation-delay: 0.14s; }
+.mail-demo.is-open .mail-demo__card:nth-child(3) { animation-delay: 0.18s; }
+.mail-demo.is-open .mail-demo__card:nth-child(4) { animation-delay: 0.22s; }
+
+.mail-demo__card-glow {
+    display: none;
+}
+
+.mail-demo__card:hover {
+    transform: translateY(-1px);
+    border-color: var(--border);
+    box-shadow: none;
+}
+
+.mail-demo__card.is-selected {
+    border-color: var(--text);
+    background: var(--surface);
+    box-shadow: none;
+}
+
+.mail-demo__card.mail-demo__card--settled {
+    opacity: 1;
+    transform: none;
+    animation: none;
+}
+
+.mail-demo__card.mail-demo__card--settled:hover {
+    transform: translateY(-2px);
+}
+
+.mail-demo__card-main {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    padding-right: 6px;
+}
+
+.mail-demo__card-logo {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.74rem;
+    font-weight: 900;
+    color: var(--md-accent, #fff);
+    background: var(--md-brand, var(--primary));
+    box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--md-brand, var(--primary)) 55%, transparent);
+    letter-spacing: -0.02em;
+}
+
+.mail-demo__card-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding-top: 1px;
+}
+
+.mail-demo__card-name {
+    font-size: 0.88rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 2px;
+    color: var(--text);
+}
+
+.mail-demo__card-tag {
+    font-size: 0.66rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+}
+
+.mail-demo__card-pos {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.mail-demo__card-check {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    background: var(--surface);
+    border: 1.5px solid var(--text);
+    opacity: 0;
+    transform: scale(0.5);
+    transition:
+        opacity 0.22s,
+        transform 0.28s var(--ease-spring);
+}
+
+.mail-demo__card.is-selected .mail-demo__card-check {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* ── 底部 ── */
+.mail-demo__foot {
+    position: relative;
+    padding: 14px 22px 20px;
+    border-top: 1px solid var(--border-light);
+    background: var(--surface);
+}
+
+.mail-demo__foot-top {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.mail-demo__meta {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.mail-demo__meta strong {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.mail-demo__warn {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0;
+    font-size: 0.72rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+}
+
+.mail-demo__warn svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    opacity: 0.85;
+}
+
+.mail-demo__send {
+    width: 100%;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1.5px solid var(--text);
+    border-radius: 14px;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--text);
+    cursor: pointer;
+    background: var(--surface);
+    box-shadow: none;
+    transition:
+        transform 0.26s var(--ease-spring),
+        opacity 0.26s,
+        border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.mail-demo__send-arrow {
+    opacity: 0.9;
+    transition: transform 0.26s var(--ease-spring);
+}
+
+.mail-demo__send:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.mail-demo__send:not(:disabled):hover {
+    transform: translateY(-1px);
+    border-color: var(--text);
+}
+
+.mail-demo__send:not(:disabled):hover .mail-demo__send-arrow {
+    transform: translateX(3px);
+}
+
+.mail-demo__send.is-loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        105deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.2) 50%,
+        transparent 70%
+    );
+    animation: mail-demo-shimmer 1.2s linear infinite;
+}
+
+@keyframes mail-demo-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@media (max-width: 640px) {
+    .mail-demo {
+        padding: 12px;
+        align-items: flex-end;
+    }
+
+    .mail-demo__dialog {
+        border-radius: 22px 22px 16px 16px;
+        max-height: 94vh;
+    }
+
+    .mail-demo__hero {
+        padding: 18px 16px 14px;
+    }
+
+    .mail-demo__body {
+        padding: 14px 16px 6px;
+    }
+
+    .mail-demo__foot {
+        padding: 12px 16px 16px;
+    }
+
+    .mail-demo__flow {
+        grid-template-columns: 1fr;
+    }
+
+    .mail-demo__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mail-demo__flow-item,
+    .mail-demo__card {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+
+    .mail-demo__dialog {
+        transition: none;
+        animation: none;
+        filter: none;
+        transform: none;
+        opacity: 1;
+    }
+}

@@ -1,0 +1,15 @@
+.env
+.venv
+venv
+__pycache__
+*.pyc
+.git
+.idea
+.vscode
+logs
+*.db
+*.md
+!README.md
+docs
+data/*
+!data/.gitkeep

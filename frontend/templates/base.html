@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OfferFlow{% endblock %}</title>
+    <link rel="icon" type="image/png" href="/static/logo/favicon.png?v=1">
+    <link rel="apple-touch-icon" href="/static/logo/favicon.png?v=1">
+    <script>
+    (function () {
+        var allowed = {
+            'sky-mint': 1, schonbrunn: 1, prussian: 1, 'mars-green': 1,
+            'morning-bay': 1, 'spring-dew': 1, 'island-air': 1, 'cerulean-ink': 1,
+            'blossom-rose': 1, 'candy-pink': 1, 'soda-pop': 1, 'bubble-blue': 1
+        };
+        var legacy = {
+            'purple-indigo': 'sky-mint', 'blaze-orange': 'sky-mint', 'aqua-spark': 'sky-mint',
+            'midnight-ink': 'morning-bay', 'forged-gold': 'spring-dew', 'mist-rose': 'island-air',
+            'mauve-silk': 'sky-mint', 'wheat-spike': 'schonbrunn',
+            'champagne-silk': 'schonbrunn', 'dawn-gleam': 'schonbrunn', 'molten-gold': 'schonbrunn',
+            'palette-spring': 'sky-mint', 'palette-dusk': 'sky-mint', 'palette-porcelain': 'sky-mint',
+            'sakura-rose': 'sky-mint', 'cinnabar-veil': 'sky-mint', 'rouge-mist': 'sky-mint',
+            'rose-dawn': 'sky-mint', 'crimson-dusk': 'sky-mint',
+            amber: 'sky-mint', burgundy: 'sky-mint', 'candy-strip': 'sky-mint', 'rainbow-pop': 'sky-mint',
+            'trio-harmony': 'sky-mint',
+            'xiang-lustre': 'schonbrunn'
+        };
+        try {
+            var t = localStorage.getItem('offerflow_theme');
+            if (t && legacy[t]) t = legacy[t];
+            if (t && allowed[t]) document.documentElement.setAttribute('data-theme', t);
+            else document.documentElement.setAttribute('data-theme', 'sky-mint');
+        } catch (e) {
+            document.documentElement.setAttribute('data-theme', 'sky-mint');
+        }
+    })();
+    </script>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="stylesheet" href="/static/css/design-system.css?v=20260605privacy1">
+    <link rel="stylesheet" href="/static/css/toast.css?v=20260604toast3">
+    <link rel="stylesheet" href="/static/css/themes.css?v=20260605theme9">
+    <link rel="stylesheet" href="/static/css/app-chrome.css?v=20260604jlstable1">
+    <link rel="stylesheet" href="/static/css/offerflow-context-menu.css?v=20260603ctx5">
+    <link rel="stylesheet" href="/static/css/jl-link-confirm.css?v=20260605confirm2">
+    <script defer src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-umd.js" crossorigin="anonymous"></script>
+    <script src="/static/js/offerflow-context-menu.js?v=20260603ctx5"></script>
+    <script src="/static/js/offerflow-focus-guard.js?v=20260603guard5"></script>
+    <script src="/static/js/offerflow-perf.js?v=20260604jlstable1"></script>
+    <script src="/static/js/batch-page-state.js?v=20260603stable2"></script>
+    <script src="/static/js/table-row-drag.js?v=20260516drag2"></script>
+    <script src="/static/js/batch-pages-boot.js?v=20260603stable2"></script>
+    <script defer src="/static/js/offerflow-theme.js?v=20260605theme9"></script>
+    <script src="/static/js/offerflow-toast.js?v=20260604toast3"></script>
+    <script defer src="/static/js/offerflow-ai-assistant-sync.js?v=20260720mailai1"></script>
+    <link rel="stylesheet" href="/static/css/mail-demo-toast.css?v=20260606demo7">
+    <script defer src="/static/js/mail-demo-toast.js?v=20260606demo7"></script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body data-turbo-prefetch="hover">
+<div class="app-shell">
+
+    <!-- ═══ Sidebar ═══ -->
+    <aside class="sidebar" id="sidebar" data-turbo-permanent>
+        <div class="sidebar-header">
+            <a href="/dashboard" class="sidebar-logo" onclick="toggleSidebar(); return false;" title="点击切换侧边栏">
+                <div class="sidebar-logo-icon"><img src="/static/logo/offerflow-logo.png" alt="OfferFlow" draggable="false" style="width:32px;height:32px;border-radius:6px;"></div>
+                <span>OfferFlow</span>
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-label">主菜单</div>
+
+                <a href="/dashboard" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                    <span class="nav-label">工作台</span>
+                </a>
+
+                <a href="/internships" class="nav-item {% if active_page == 'internships' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                    <span class="nav-label">实习投递</span>
+                </a>
+
+                <a href="/campus" class="nav-item {% if active_page == 'campus' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                    </svg>
+                    <span class="nav-label">校招投递</span>
+                    <span class="nav-badge" id="navCampusBadge" style="display:none">0</span>
+                </a>
+
+                <a href="/mail-read" class="nav-item {% if active_page == 'mail_read' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2"/>
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                    </svg>
+                    <span class="nav-label">邮箱解析</span>
+                    <span class="nav-badge" id="navMailUnreadBadge" style="display:none">0</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card-wrap">
+                <div class="user-card" title="本地开源版 · 无需登录">
+                    <div class="user-avatar" id="userAvatar">OF</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">本地用户</div>
+                        <div class="user-email" id="userEmail">SQLite · 开源版</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ═══ Main Content ═══ -->
+    <div class="main">
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="theme-menu-wrap js-theme-menu-wrap" id="themeMenuWrapApp">
+                    <button type="button" class="theme-menu-trigger" id="themeMenuTriggerApp" aria-expanded="false" aria-haspopup="listbox" aria-label="切换主题配色" title="主题配色"></button>
+                    <div class="theme-popover" id="themePopoverApp" hidden role="listbox" aria-label="选择主题配色">
+                        <div class="theme-popover-inner" id="themePopoverInnerApp"></div>
+                    </div>
+                </div>
+                <div class="topbar-title">{% block page_title %}工作台{% endblock %}</div>
+            </div>
+            <div class="topbar-actions">
+                {% block header_actions %}{% endblock %}
+            </div>
+        </header>
+
+        <main class="page">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<!-- ═══ Toast Container ═══ -->
+<div class="toast-container" id="toastContainer" data-turbo-permanent></div>
+<div class="mail-demo-toast-host" id="mailDemoToastHost" data-turbo-permanent aria-live="polite"></div>
+
+<!-- ═══ Modal Overlay ═══ -->
+<div class="modal-overlay" id="modalOverlay" data-turbo-permanent onclick="if(event.target===this)closeModal()">
+    <div class="modal" id="modalBox">
+        <div class="modal-header">
+            <div class="modal-title" id="modalTitle"></div>
+            <button class="modal-close" onclick="closeModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<!-- ═══ Confirm Modal（样式对齐岗位速递外链确认） ═══ -->
+<div class="jl-link-confirm-overlay" id="confirmOverlay" data-turbo-permanent aria-hidden="true" onclick="if(event.target===this)closeConfirm()">
+    <div class="jl-link-confirm" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+        <button type="button" class="jl-link-confirm__close" onclick="closeConfirm()" aria-label="关闭">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="jl-link-confirm__inner">
+            <div class="jl-link-confirm__head">
+                <p class="jl-link-confirm__eyebrow" id="confirmEyebrow">操作确认</p>
+                <h3 class="jl-link-confirm__company" id="confirmTitle">确认操作</h3>
+                <p class="jl-link-confirm__subtitle" id="confirmDesc"></p>
+            </div>
+            <p class="jl-link-confirm__hint" id="confirmHint" hidden></p>
+            <div class="jl-link-confirm__actions">
+                <button type="button" class="jl-link-confirm__cancel" onclick="closeConfirm()">取消</button>
+                <button type="button" class="jl-link-confirm__go" id="confirmBtn">
+                    <span id="confirmBtnLabel">确认</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Calendar Modal ═══ -->
+<div class="cal-overlay" id="calOverlay" data-turbo-permanent aria-hidden="true">
+    <div class="cal-body">
+        <div class="cal-header">
+            <div class="cal-month-nav">
+                <button class="cal-nav-btn" onclick="calNavMonth(-1)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div class="cal-month-label" id="calMonthLabel">2026 年 4 月</div>
+                <button class="cal-nav-btn" onclick="calNavMonth(1)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>
+            <button class="cal-today-btn" onclick="calGoToday()">今天</button>
+            <button class="cal-close-btn" onclick="closeCalendarModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="cal-main">
+            <div class="cal-grid-area">
+                <div class="cal-weekdays" id="calWeekdays"></div>
+                <div class="cal-days" id="calDays"></div>
+            </div>
+            <div class="cal-timeline">
+                <div class="cal-tl-header-row">
+                    <div class="cal-tl-header-main" id="calTlHeader">即将到来</div>
+                    <button type="button" class="cal-tl-reset" id="calTlResetBtn" hidden onclick="calClearDaySelection()">查看全部</button>
+                </div>
+                <div id="calTlContent" class="cal-tl-content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Context Menu ═══ -->
+<div class="ctx-menu" id="ctxMenu" data-turbo-permanent role="menu" aria-hidden="true"></div>
+
+<script data-turbo-eval="false">
+// ═══════════════════════════════════════════════
+//  Global State
+// ═══════════════════════════════════════════════
+var gUser = null;
+var gAllData = [];
+var confirmCallback = null;
+var confirmCloseTimer = null;
+
+var calCurrentMonth = new Date();
+var calItems = []; // filled by child pages
+var calSelectedDate = null; // yyyy-mm-dd，与格子 onclick 一致；带时间的场次用 startsWith 匹配
+
+// ═══════════════════════════════════════════════
+//  Auth Helpers（开源本地版：无登录）
+// ═══════════════════════════════════════════════
+function getToken() { return 'local'; }
+function getTokenUserId() { return 'local'; }
+function shouldApplyUser(u) { return !!u; }
+function clearAuthSession() { gUser = null; }
+function logout() {}
+
+function apiFetchCore(url, options) {
+    options = options || {};
+    var rawBody = options.body;
+    var hasBody = rawBody !== undefined && rawBody !== null;
+    var method = options.method || (hasBody ? 'POST' : 'GET');
+    var rest = Object.assign({}, options);
+    delete rest.body;
+    delete rest._guestRetried;
+    delete rest.allowPreviewRetry;
+    return fetch(url, Object.assign({}, rest, {
+        method: method,
+        headers: Object.assign({ 'Content-Type': 'application/json' }, options.headers || {}),
+        body: hasBody ? JSON.stringify(rawBody) : undefined
+    })).then(function (res) {
+        return res.text().then(function (text) {
+            var d = {};
+            if (text) {
+                try { d = JSON.parse(text); } catch (e) { d = { detail: text.trim() || res.statusText }; }
+            }
+            if (!res.ok) {
+                var det = d.detail;
+                var msg = '请求失败';
+                if (typeof det === 'string') msg = det;
+                else if (det && typeof det === 'object' && !Array.isArray(det)) msg = det.message || det.msg || JSON.stringify(det);
+                else if (Array.isArray(det) && det.length) msg = det.map(function (e) { return (e && e.msg) ? e.msg : JSON.stringify(e); }).join('；');
+                var err = new Error(msg);
+                err.status = res.status;
+                throw err;
+            }
+            return d;
+        });
+    });
+}
+
+var api = apiFetchCore;
+
+function applyUserToChrome(u) {
+    gUser = u || { id: 'local', username: '本地用户' };
+    window.currentUserId = 'local';
+    window.gUserIsPreview = false;
+    window.gUserIsMember = true;
+}
+
+function loadUser() {
+    var u = { id: 'local', username: '本地用户', email: 'local@offerflow', is_preview_guest: false, is_member: true };
+    applyUserToChrome(u);
+    return Promise.resolve(u);
+}
+
+// ═══════════════════════════════════════════════
+//  Sidebar
+// ═══════════════════════════════════════════════
+function toggleSidebar() {
+    const sb = document.getElementById('sidebar');
+    const collapsed = sb.classList.toggle('collapsed');
+    localStorage.setItem('sidebar_collapsed', collapsed);
+    closeUserAccountMenu();
+    // flex 方案：sidebar 宽度动画自动推动 .main 扩展，无需 JS 操作 .main
+}
+
+(function() {
+    if (localStorage.getItem('sidebar_collapsed') === 'true') {
+        document.getElementById('sidebar').classList.add('collapsed');
+    }
+})();
+
+function closeUserAccountMenu() {
+    var p = document.getElementById('userAccountPopover');
+    var btn = document.getElementById('userAccountBtn');
+    if (p) p.hidden = true;
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+function toggleUserAccountMenu(ev) {
+    if (ev) ev.stopPropagation();
+    var sb = document.getElementById('sidebar');
+    var p = document.getElementById('userAccountPopover');
+    var btn = document.getElementById('userAccountBtn');
+    if (!p || !btn) return;
+    if (sb && sb.classList.contains('collapsed')) {
+        window.location.href = '/settings';
+        return;
+    }
+    var open = p.hidden;
+    p.hidden = !open;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+(function bindUserAccountMenuClose() {
+    if (window.__userAccountMenuCloseBound) return;
+    window.__userAccountMenuCloseBound = true;
+    document.addEventListener('click', function (ev) {
+        var w = document.querySelector('.user-card-wrap');
+        if (w && !w.contains(ev.target)) closeUserAccountMenu();
+    }, true);
+    document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape') closeUserAccountMenu();
+    });
+})();
+
+function resetTableSelectPanelLayout(list) {
+    if (!list) return;
+    list.classList.remove('table-select-panel--drop-up');
+    list.style.position = '';
+    list.style.left = '';
+    list.style.top = '';
+    list.style.width = '';
+    list.style.maxWidth = '';
+    list.style.maxHeight = '';
+    list.style.overflowY = '';
+    list.style.zIndex = '';
+}
+
+/** 含 backdrop-filter 的祖先会使 fixed 相对该层而非视口，轮次下拉面板需挂到 body 才能对齐触发按钮 */
+function reparentRoundModalSelectPanel(list) {
+    if (!list || !list._offerflowRoundWrap) return;
+    if (list.parentNode !== document.body) document.body.appendChild(list);
+}
+
+function restoreRoundModalSelectPanel(list) {
+    if (!list || !list._offerflowRoundWrap || !list._offerflowRoundSel) return;
+    if (list.parentNode !== document.body) return;
+    var w = list._offerflowRoundWrap;
+    if (w && w.parentNode) w.insertBefore(list, list._offerflowRoundSel);
+    else list.remove();
+}
+
+/** 面板挂在 body 上时，点滚动条/部分浏览器下 target 不在 ul 内，不能仅靠 closest(wrap) */
+function clickIsInsideRoundModalHmSelectUi(ev) {
+    var t = ev && ev.target;
+    if (t && t.closest) {
+        if (t.closest('.round-modal-select-wrap') || t.closest('.round-modal-select-panel')) return true;
+    }
+    if (ev && document.elementsFromPoint) {
+        var cx = ev.clientX, cy = ev.clientY;
+        if (cx != null && cy != null) {
+            try {
+                var stack = document.elementsFromPoint(cx, cy);
+                for (var i = 0; i < stack.length; i++) {
+                    var el = stack[i];
+                    if (el && el.classList && el.classList.contains('round-modal-select-panel')) return true;
+                }
+            } catch (e) {}
+        }
+    }
+    return false;
+}
+
+function positionTableSelectPanel(face, list) {
+    var r = face.getBoundingClientRect();
+    var vw = window.innerWidth || document.documentElement.clientWidth;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var pad = 8;
+    var w = Math.max(r.width, 112);
+    var left = r.left;
+    if (left + w > vw - pad) left = Math.max(pad, vw - w - pad);
+    if (left < pad) left = pad;
+    list.style.position = 'fixed';
+    list.style.left = left + 'px';
+    list.style.top = (r.bottom + 4) + 'px';
+    list.style.width = w + 'px';
+    list.style.maxWidth = (vw - 2 * pad) + 'px';
+    list.style.zIndex = '2500';
+    list.style.maxHeight = '';
+    list.style.overflowY = '';
+    requestAnimationFrame(function () {
+        var spaceBelow = Math.max(0, vh - r.bottom - pad - 4);
+        var lh = list.scrollHeight;
+        var isRoundModal = list.classList && list.classList.contains('round-modal-select-panel');
+        if (isRoundModal) {
+            /* 约 10 行可视高度，超出在面板内滚动 */
+            var rowH = 38;
+            var firstLi = list.querySelector('li');
+            if (firstLi) {
+                var rh = firstLi.getBoundingClientRect().height;
+                if (rh > 4) rowH = Math.ceil(rh);
+            }
+            var roundCapPx = Math.min(rowH * 10 + 16, 420);
+            var cap = Math.min(roundCapPx, spaceBelow);
+            if (lh > cap) {
+                list.style.maxHeight = Math.max(120, cap) + 'px';
+                list.style.overflowY = 'auto';
+            }
+            /* 小时列表：打开时滚到约 9 点起，避免默认顶在 0 点；再等一帧保证 maxHeight 已参与布局 */
+            if (list.dataset.offerflowHourStart09 === '1') {
+                requestAnimationFrame(function () {
+                    var li9 = list.querySelector('li[data-value="09"]');
+                    if (li9) list.scrollTop = Math.max(0, li9.offsetTop);
+                });
+            }
+        } else {
+            var spaceAbove = Math.max(0, r.top - pad - 4);
+            var gap = 4;
+            var fitsBelow = lh <= spaceBelow;
+            var fitsAbove = lh <= spaceAbove;
+            list.classList.remove('table-select-panel--drop-up');
+            if (fitsBelow) {
+                list.style.top = (r.bottom + gap) + 'px';
+            } else if (fitsAbove || spaceAbove >= spaceBelow) {
+                list.classList.add('table-select-panel--drop-up');
+                var panelH = Math.min(lh, spaceAbove);
+                list.style.top = Math.max(pad, r.top - panelH - gap) + 'px';
+                if (!fitsAbove) {
+                    list.style.maxHeight = Math.max(100, spaceAbove) + 'px';
+                    list.style.overflowY = 'auto';
+                }
+            } else {
+                list.style.top = (r.bottom + gap) + 'px';
+                list.style.maxHeight = Math.max(100, spaceBelow) + 'px';
+                list.style.overflowY = 'auto';
+            }
+        }
+    });
+}
+
+function closeAllTableSelectPanels() {
+    document.querySelectorAll('.data-table .table-select-panel').forEach(function (p) {
+        if (!p.hidden) resetTableSelectPanelLayout(p);
+        p.hidden = true;
+    });
+    document.querySelectorAll('.data-table .table-select-face').forEach(function (f) { f.setAttribute('aria-expanded', 'false'); });
+}
+
+function closeAllRoundModalSelectPanels() {
+    document.querySelectorAll('.round-modal-select-panel').forEach(function (p) {
+        resetTableSelectPanelLayout(p);
+        p.hidden = true;
+        restoreRoundModalSelectPanel(p);
+    });
+    document.querySelectorAll('.round-modal-select-face').forEach(function (f) {
+        f.setAttribute('aria-expanded', 'false');
+    });
+}
+
+/** 面试轮次弹窗 #rHour/#rMin：用按钮+固定在下方的列表面板，避免原生 select 在视口下半区向上弹出 */
+function initRoundModalHmSelects(root) {
+    root = root || document.getElementById('modalBody');
+    if (!root || !root.querySelector) return;
+    ['rHour', 'rMin'].forEach(function (id) {
+        var sel = root.querySelector('#' + id);
+        if (!sel || sel.tagName !== 'SELECT' || sel.closest('.round-modal-select-wrap')) return;
+        var wrap = document.createElement('div');
+        wrap.className = 'round-modal-select-wrap';
+        var face = document.createElement('button');
+        face.type = 'button';
+        face.className = 'round-modal-select-face';
+        var si = sel.selectedIndex >= 0 ? sel.selectedIndex : 0;
+        face.textContent = sel.options[si] ? sel.options[si].textContent : '';
+        face.setAttribute('aria-haspopup', 'listbox');
+        face.setAttribute('aria-expanded', 'false');
+        var list = document.createElement('ul');
+        list.className = 'round-modal-select-panel';
+        if (id === 'rHour') list.dataset.offerflowHourStart09 = '1';
+        list.hidden = true;
+        list.setAttribute('role', 'listbox');
+        list.addEventListener('wheel', function (e) {
+            e.stopPropagation();
+        }, { capture: true, passive: true });
+        Array.from(sel.options).forEach(function (opt) {
+            var li = document.createElement('li');
+            li.setAttribute('role', 'option');
+            li.dataset.value = opt.value;
+            li.textContent = opt.textContent;
+            if (opt.selected) li.setAttribute('aria-selected', 'true');
+            li.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (sel.value !== opt.value) {
+                    sel.value = opt.value;
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                face.textContent = opt.textContent;
+                list.querySelectorAll('li').forEach(function (x) { x.removeAttribute('aria-selected'); });
+                li.setAttribute('aria-selected', 'true');
+                list.hidden = true;
+                resetTableSelectPanelLayout(list);
+                restoreRoundModalSelectPanel(list);
+                face.setAttribute('aria-expanded', 'false');
+            });
+            list.appendChild(li);
+        });
+        sel.parentNode.insertBefore(wrap, sel);
+        wrap.appendChild(face);
+        wrap.appendChild(list);
+        wrap.appendChild(sel);
+        list._offerflowRoundWrap = wrap;
+        list._offerflowRoundSel = sel;
+        sel.classList.add('round-modal-select-native');
+        sel.tabIndex = -1;
+        sel.addEventListener('change', function () {
+            var si2 = sel.selectedIndex >= 0 ? sel.selectedIndex : 0;
+            face.textContent = sel.options[si2] ? sel.options[si2].textContent : '';
+        });
+        face.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (!list.hidden) {
+                list.hidden = true;
+                resetTableSelectPanelLayout(list);
+                restoreRoundModalSelectPanel(list);
+                face.setAttribute('aria-expanded', 'false');
+                return;
+            }
+            closeAllRoundModalSelectPanels();
+            closeAllTableSelectPanels();
+            reparentRoundModalSelectPanel(list);
+            list.hidden = false;
+            positionTableSelectPanel(face, list);
+            face.setAttribute('aria-expanded', 'true');
+        });
+    });
+}
+
+/** 实习/校招表：原生 select 弹层无法居中，用按钮+面板替代展示，保留隐藏 select 触发既有 onchange */
+function initTableSelectEnhancements(root) {
+    if (!root || !root.querySelectorAll) return;
+    if (typeof window.__offerflowTableSelectDocBound === 'undefined') {
+        window.__offerflowTableSelectDocBound = true;
+        document.addEventListener('click', function (ev) {
+            var t = ev.target;
+            if (t && t.closest && t.closest('.table-select-wrap')) return;
+            closeAllTableSelectPanels();
+            if (clickIsInsideRoundModalHmSelectUi(ev)) return;
+            closeAllRoundModalSelectPanels();
+        }, true);
+        document.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Escape') {
+                closeAllTableSelectPanels();
+                closeAllRoundModalSelectPanels();
+            }
+        });
+        window.addEventListener('scroll', function (ev) {
+            var tar = ev.target;
+            if (tar && tar.nodeType === 1 && tar.closest && tar.closest('.round-modal-select-panel')) return;
+            document.querySelectorAll('.data-table .table-select-panel').forEach(function (p) {
+                if (!p.hidden) {
+                    p.hidden = true;
+                    resetTableSelectPanelLayout(p);
+                }
+            });
+            document.querySelectorAll('.data-table .table-select-face').forEach(function (f) { f.setAttribute('aria-expanded', 'false'); });
+            closeAllRoundModalSelectPanels();
+        }, true);
+    }
+    root.querySelectorAll('select.tone-priority, select.tone-status').forEach(function (sel) {
+        if (sel.closest('.table-select-wrap')) return;
+        var wrap = document.createElement('div');
+        wrap.className = 'table-select-wrap';
+        var face = document.createElement('button');
+        face.type = 'button';
+        face.className = 'table-select-face ' + Array.from(sel.classList).filter(function (c) { return c && c !== 'inline-select'; }).join(' ');
+        var si = sel.selectedIndex >= 0 ? sel.selectedIndex : 0;
+        face.textContent = sel.options[si] ? sel.options[si].textContent : '';
+        face.setAttribute('aria-haspopup', 'listbox');
+        face.setAttribute('aria-expanded', 'false');
+        var list = document.createElement('ul');
+        list.className = 'table-select-panel';
+        list.hidden = true;
+        list.setAttribute('role', 'listbox');
+        Array.from(sel.options).forEach(function (opt) {
+            var li = document.createElement('li');
+            li.setAttribute('role', 'option');
+            li.dataset.value = opt.value;
+            li.textContent = opt.textContent;
+            if (opt.selected) li.setAttribute('aria-selected', 'true');
+            li.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (sel.value !== opt.value) {
+                    sel.value = opt.value;
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                face.textContent = opt.textContent;
+                list.querySelectorAll('li').forEach(function (x) { x.removeAttribute('aria-selected'); });
+                li.setAttribute('aria-selected', 'true');
+                list.hidden = true;
+                resetTableSelectPanelLayout(list);
+                face.setAttribute('aria-expanded', 'false');
+            });
+            list.appendChild(li);
+        });
+        sel.parentNode.insertBefore(wrap, sel);
+        wrap.appendChild(face);
+        wrap.appendChild(list);
+        wrap.appendChild(sel);
+        sel.classList.add('table-select-native');
+        sel.tabIndex = -1;
+        face.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (!list.hidden) {
+                list.hidden = true;
+                resetTableSelectPanelLayout(list);
+                face.setAttribute('aria-expanded', 'false');
+                return;
+            }
+            closeAllRoundModalSelectPanels();
+            document.querySelectorAll('.data-table .table-select-panel').forEach(function (p) {
+                if (p !== list && !p.hidden) resetTableSelectPanelLayout(p);
+                if (p !== list) p.hidden = true;
+            });
+            document.querySelectorAll('.data-table .table-select-face').forEach(function (f) {
+                if (f !== face) f.setAttribute('aria-expanded', 'false');
+            });
+            list.hidden = false;
+            positionTableSelectPanel(face, list);
+            face.setAttribute('aria-expanded', 'true');
+        });
+    });
+}
+
+// ═══════════════════════════════════════════════
+//  Modal
+// ═══════════════════════════════════════════════
+function openModal(title, content, onReady) {
+    closeAllRoundModalSelectPanels();
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBody').innerHTML = content;
+    document.getElementById('modalOverlay').classList.add('active');
+    if (onReady) setTimeout(onReady, 50);
+}
+
+function closeModal() {
+    closeAllRoundModalSelectPanels();
+    var modalBox = document.getElementById('modalBox');
+    if (modalBox) modalBox.classList.remove('modal--catalog-sheet');
+    document.getElementById('modalOverlay').classList.remove('active');
+}
+
+// ═══════════════════════════════════════════════
+//  Confirm（勿命名为 confirm，以免覆盖浏览器原生 window.confirm）
+// ═══════════════════════════════════════════════
+function showConfirmModal(title, desc, onOK, options) {
+    options = options || {};
+    var isDelete = String(title || '').indexOf('\u5220\u9664') >= 0;
+    var eyebrowEl = document.getElementById('confirmEyebrow');
+    var titleEl = document.getElementById('confirmTitle');
+    var descEl = document.getElementById('confirmDesc');
+    var hintEl = document.getElementById('confirmHint');
+    var labelEl = document.getElementById('confirmBtnLabel');
+    var ov = document.getElementById('confirmOverlay');
+    if (!ov || !titleEl) return;
+
+    if (eyebrowEl) {
+        eyebrowEl.textContent = options.eyebrow || (isDelete ? '\u6295\u9012\u8bb0\u5f55' : '\u64cd\u4f5c\u786e\u8ba4');
+    }
+    titleEl.textContent = title || '\u786e\u8ba4\u64cd\u4f5c';
+    if (descEl) descEl.textContent = desc || '';
+    if (labelEl) {
+        labelEl.textContent = options.confirmLabel || (isDelete ? '\u786e\u8ba4\u5220\u9664' : '\u786e\u8ba4');
+    }
+    if (hintEl) {
+        var hint = options.hint;
+        if (hint === undefined) hint = isDelete ? '\u6b64\u64cd\u4f5c\u4e0d\u53ef\u64a4\u9500\uff0c\u8bf7\u786e\u8ba4\u540e\u7ee7\u7eed' : '';
+        if (hint) {
+            hintEl.textContent = hint;
+            hintEl.hidden = false;
+        } else {
+            hintEl.textContent = '';
+            hintEl.hidden = true;
+        }
+    }
+
+    clearTimeout(confirmCloseTimer);
+    ov.classList.remove('is-closing');
+    ov.classList.add('is-open');
+    ov.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('jl-link-confirm-open');
+    confirmCallback = onOK;
+    var btn = document.getElementById('confirmBtn');
+    if (btn) btn.focus();
+}
+
+function closeConfirm() {
+    var ov = document.getElementById('confirmOverlay');
+    if (!ov || !ov.classList.contains('is-open')) {
+        confirmCallback = null;
+        return;
+    }
+    ov.classList.add('is-closing');
+    document.body.classList.remove('jl-link-confirm-open');
+    clearTimeout(confirmCloseTimer);
+    confirmCloseTimer = setTimeout(function () {
+        ov.classList.remove('is-open', 'is-closing');
+        ov.setAttribute('aria-hidden', 'true');
+        confirmCallback = null;
+    }, 240);
+}
+
+document.getElementById('confirmBtn').addEventListener('click', function () {
+    var cb = confirmCallback;
+    closeConfirm();
+    if (cb) cb();
+});
+
+// Close modals on Escape
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        closeModal();
+        closeConfirm();
+        closeCalendarModal();
+        hideCtx();
+    }
+});
+
+// ═══════════════════════════════════════════════
+//  Calendar Modal
+// ═══════════════════════════════════════════════
+const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
+
+function openCalendarModal() {
+    calSelectedDate = null;
+    document.getElementById('calOverlay').classList.add('active');
+    document.getElementById('calOverlay').setAttribute('aria-hidden', 'false');
+    renderCalendar();
+}
+
+function closeCalendarModal() {
+    document.getElementById('calOverlay').classList.remove('active');
+    document.getElementById('calOverlay').setAttribute('aria-hidden', 'true');
+}
+
+function calNavMonth(delta) {
+    calSelectedDate = null;
+    calCurrentMonth.setMonth(calCurrentMonth.getMonth() + delta);
+    renderCalendar();
+}
+
+function calGoToday() {
+    calCurrentMonth = new Date();
+    var t = new Date();
+    calSelectedDate = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+    renderCalendar();
+}
+
+function calClearDaySelection() {
+    calSelectedDate = null;
+    renderCalendar();
+}
+
+/** 面试轮次时间是否落在某日（支持 2026-05-06 与 2026-05-06T14:30:00） */
+function calRoundOnDate(roundTime, dateStr) {
+    return !!(roundTime && dateStr && String(roundTime).startsWith(dateStr));
+}
+
+function calFormatDayTitle(dateStr) {
+    var p = dateStr.split('-');
+    if (p.length !== 3) return dateStr;
+    return parseInt(p[1], 10) + '月' + parseInt(p[2], 10) + '日';
+}
+
+/** 时间轴分组左侧文案 */
+function calTlGroupCaption(roundTime, selectedDate) {
+    if (!roundTime) return '';
+    var s = String(roundTime);
+    if (selectedDate && calRoundOnDate(s, selectedDate)) {
+        return s.indexOf('T') >= 0 ? s.substring(11, 16) : '全天';
+    }
+    if (s.indexOf('T') >= 0) {
+        return calFormatDayTitle(s.substring(0, 10)) + ' ' + s.substring(11, 16);
+    }
+    return calFormatDayTitle(s.substring(0, 10));
+}
+
+function renderCalendar() {
+    const y = calCurrentMonth.getFullYear();
+    const m = calCurrentMonth.getMonth();
+    document.getElementById('calMonthLabel').textContent = `${y} 年 ${m + 1} 月`;
+
+    // Weekdays header
+    let wdHtml = '';
+    for (const d of WEEKDAYS) wdHtml += `<div class="cal-weekday">${d}</div>`;
+    document.getElementById('calWeekdays').innerHTML = wdHtml;
+
+    // Days grid
+    const firstDay = new Date(y, m, 1).getDay();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const daysInPrev = new Date(y, m, 0).getDate();
+    const today = new Date();
+
+    let daysHtml = '';
+
+    // Prev month days
+    for (let i = firstDay; i > 0; i--) {
+        const d = daysInPrev - i + 1;
+        daysHtml += `<div class="cal-day other-month">${d}</div>`;
+    }
+
+    // Current month
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const isToday = today.getFullYear()===y && today.getMonth()===m && today.getDate()===d;
+        const isSelected = calSelectedDate === dateStr;
+        const hasInterview = calItems.some(item =>
+            item.rounds && item.rounds.some(r => r.time && r.time.startsWith(dateStr))
+        );
+        const interviewCount = calItems.reduce((cnt, item) =>
+            cnt + (item.rounds ? item.rounds.filter(r => r.time && r.time.startsWith(dateStr)).length : 0), 0
+        );
+
+        let cls = 'cal-day';
+        if (isToday) cls += ' today';
+        if (isSelected) cls += ' selected';
+        if (hasInterview) cls += ' has-interview' + (interviewCount > 1 ? ' many' : '');
+
+        daysHtml += `<div class="${cls}" onclick="calDayClick('${dateStr}')">${d}
+            ${hasInterview ? `<div class="cal-day-count">${interviewCount}</div>` : ''}
+        </div>`;
+    }
+
+    // Next month fill to 42 cells
+    const totalCells = firstDay + daysInMonth;
+    const remaining = (totalCells <= 35 ? 35 : 42) - totalCells;
+    for (let d = 1; d <= remaining; d++) {
+        daysHtml += `<div class="cal-day other-month">${d}</div>`;
+    }
+
+    document.getElementById('calDays').innerHTML = daysHtml;
+    renderCalTimeline(calSelectedDate);
+}
+
+function calDayClick(dateStr) {
+    if (calSelectedDate === dateStr) {
+        calSelectedDate = null;
+    } else {
+        calSelectedDate = dateStr;
+    }
+    renderCalendar();
+}
+
+function renderCalTimeline(selectedDate) {
+    var tl = document.getElementById('calTlContent');
+    var header = document.getElementById('calTlHeader');
+    var resetBtn = document.getElementById('calTlResetBtn');
+    var now = new Date();
+
+    if (selectedDate) {
+        header.textContent = calFormatDayTitle(selectedDate) + ' · 笔试 / 面试';
+        if (resetBtn) resetBtn.hidden = false;
+    } else {
+        header.textContent = '即将到来';
+        if (resetBtn) resetBtn.hidden = true;
+    }
+
+    tl.classList.remove('cal-tl-content--enter');
+    void tl.offsetWidth;
+
+    var items = calItems;
+    if (selectedDate) {
+        items = calItems.filter(function(item) {
+            return item.rounds && item.rounds.some(function(r) { return calRoundOnDate(r.time, selectedDate); });
+        });
+    } else {
+        items = calItems.filter(function(item) {
+            return item.rounds && item.rounds.some(function(r) {
+                if (!r.time) return false;
+                var dt = calParseRoundInstant(r.time);
+                return dt && !isNaN(dt.getTime()) && dt >= now;
+            });
+        });
+    }
+
+    if (!items.length) {
+        tl.innerHTML = '<div class="cal-tl-empty">' + (selectedDate ? '当日暂无笔试或面试安排' : '暂无即将到来的安排') + '</div>';
+        tl.classList.add('cal-tl-content--enter');
+        var tlPane0 = document.querySelector('.cal-timeline');
+        if (tlPane0) tlPane0.scrollTop = 0;
+        return;
+    }
+
+    var groups = {};
+    for (var ii = 0; ii < items.length; ii++) {
+        var item = items[ii];
+        if (!item.rounds) continue;
+        for (var ri = 0; ri < item.rounds.length; ri++) {
+            var round = item.rounds[ri];
+            if (selectedDate && !calRoundOnDate(round.time, selectedDate)) continue;
+            if (!selectedDate) {
+                var inst = calParseRoundInstant(round.time);
+                if (!inst || inst < now) continue;
+            }
+            if (!round.time) continue;
+            if (!groups[round.time]) groups[round.time] = [];
+            groups[round.time].push({ item: item, round: round });
+        }
+    }
+
+    var sortedKeys = Object.keys(groups).sort();
+    var html = '';
+
+    for (var ki = 0; ki < sortedKeys.length; ki++) {
+        var gkey = sortedKeys[ki];
+        var cap = calTlGroupCaption(gkey, selectedDate);
+        html += '<div class="cal-tl-date-group">' +
+            '<div class="cal-tl-date-label">' + escHtml(cap) + '</div>' +
+            '<div class="cal-tl-items">';
+        var rowList = groups[gkey];
+        for (var pi = 0; pi < rowList.length; pi++) {
+            var row = rowList[pi];
+            var pit = row.item;
+            var rnd = row.round;
+            var cd = calCountdown(rnd.time);
+            var rndInst = calParseRoundInstant(rnd.time);
+            var calCardPast = rndInst && !isNaN(rndInst.getTime()) && rndInst < now;
+            var roundLabel = rnd.type || '面试';
+            var timeLine = rnd.time && rnd.time.indexOf('T') >= 0
+                ? rnd.time.substring(11, 16)
+                : (rnd.time ? calFormatDayTitle(rnd.time.substring(0, 10)) : '');
+            html += '<div class="cal-tl-card' + (calCardPast ? ' cal-tl-card--past' : '') + '" onclick="calCardClick(\'' + pit.id + '\')">' +
+                '<div class="cal-tl-company">' + escHtml(pit.company) + '</div>' +
+                '<div class="cal-tl-position">' + escHtml(pit.position) + '</div>' +
+                '<div class="cal-tl-time">' +
+                '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+                escHtml(roundLabel) + ' · ' + escHtml(timeLine) +
+                '</div>' +
+                (cd.badge !== 'done' ? '<span class="countdown-badge ' + cd.badge + '">' + escHtml(cd.text) + '</span>' : '') +
+                '</div>';
+        }
+        html += '</div></div>';
+    }
+
+    tl.innerHTML = html;
+    tl.classList.add('cal-tl-content--enter');
+    var tlPane = document.querySelector('.cal-timeline');
+    if (tlPane) tlPane.scrollTop = 0;
+}
+
+function calParseRoundInstant(roundTime) {
+    if (!roundTime) return null;
+    var s = String(roundTime).trim();
+    if (s.indexOf('T') >= 0) return new Date(s);
+    return new Date(s + 'T00:00:00');
+}
+
+function calCardClick(id) {
+    closeCalendarModal();
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (row) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row.style.boxShadow = '0 0 0 2px var(--primary)';
+        setTimeout(() => { row.style.boxShadow = ''; }, 2000);
+    }
+}
+
+function calCountdown(roundTime) {
+    var now = new Date();
+    var d = calParseRoundInstant(roundTime);
+    if (!d || isNaN(d.getTime())) return { text: '-', badge: '' };
+    var diff = d - now;
+    if (diff < 0) return { text: '已结束', badge: 'done' };
+    var days = Math.floor(diff / 86400000);
+    if (days > 3) return { text: days + '天后', badge: '' };
+    if (days >= 1) return { text: days + '天', badge: 'soon' };
+    var h = Math.floor((diff % 86400000) / 3600000);
+    var min = Math.floor((diff % 3600000) / 60000);
+    return { text: h + ':' + String(min).padStart(2, '0'), badge: 'urgent' };
+}
+
+function escHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function escAttr(s) {
+    if (s == null || s === undefined) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+/** 实习/校招表格：公司+岗位列（岗位描述仅存于隐藏节点，悬停展示） */
+function companyCellHtml(x) {
+    var company = (x && x.company) ? String(x.company) : '';
+    var position = (x && x.position) ? String(x.position) : '';
+    var desc = (x && x.description) ? String(x.description).trim() : '';
+    var logoChar = company ? company.charAt(0) : '?';
+    var hasDesc = desc ? ' company-cell--has-desc' : '';
+    var descStore = desc ? '<span class="job-desc-store" hidden aria-hidden="true">' + escHtml(desc) + '</span>' : '';
+    return '<td><div class="company-cell' + hasDesc + '">' +
+        '<div class="company-logo-wrap">' + pinnedLogoMarkerHtml(x && x.pinned) +
+        '<div class="company-logo company-logo--neutral">' + escHtml(logoChar) + '</div></div>' +
+        '<div class="company-cell-text"><div class="company-name">' + escHtml(company) + '</div>' +
+        '<div class="company-position">' + escHtml(position) + '</div></div>' +
+        descStore + '</div></td>';
+}
+
+/** 实习/校招表格：岗位链接列表头 */
+function deliveryJobLinkThHtml() {
+    return '<th class="col-job-link">岗位链接</th>';
+}
+
+/** 实习/校招表格：岗位链接单元格（最多两行，主题色链接） */
+function deliveryJobLinkCellHtml(x, opts) {
+    opts = opts || {};
+    var emptyLabel = opts.emptyLabel || '点击添加链接';
+    var id = x && x.id ? String(x.id) : '';
+    var link = x && x.link ? String(x.link).trim() : '';
+    if (link) {
+        return '<td class="col-job-link">' +
+            '<div class="delivery-job-link-cell">' +
+            '<a href="' + escAttr(link) + '" target="_blank" rel="noopener noreferrer" class="delivery-job-link inline-editable" title="' + escAttr(link) + '" onclick="event.stopPropagation()">' + escHtml(link) + '</a>' +
+            '</div></td>';
+    }
+    return '<td class="col-job-link">' +
+        '<div class="delivery-job-link-cell delivery-job-link-cell--empty">' +
+        '<span class="delivery-job-link-placeholder inline-editable" onclick="event.stopPropagation(); makeEditableLink(this,\'' + escAttr(id) + '\')">' + escHtml(emptyLabel) + '</span>' +
+        '</div></td>';
+}
+
+var _jobDescPopover = null;
+var _jobDescHideTimer = null;
+var _jobDescActiveCell = null;
+
+function ensureJobDescPopover() {
+    if (_jobDescPopover) return _jobDescPopover;
+    var el = document.createElement('div');
+    el.id = 'jobDescPopover';
+    el.className = 'job-desc-popover';
+    el.setAttribute('role', 'tooltip');
+    el.hidden = true;
+    el.innerHTML =
+        '<div class="job-desc-popover__accent" aria-hidden="true"></div>' +
+        '<div class="job-desc-popover__inner">' +
+        '<header class="job-desc-popover__head">' +
+        '<div class="job-desc-popover__company"></div>' +
+        '<div class="job-desc-popover__position"></div>' +
+        '</header>' +
+        '<div class="job-desc-popover__body-wrap">' +
+        '<div class="job-desc-popover__label">岗位描述</div>' +
+        '<div class="job-desc-popover__body"></div>' +
+        '</div></div>';
+    el.addEventListener('mouseenter', function () { clearTimeout(_jobDescHideTimer); });
+    el.addEventListener('mouseleave', function () { scheduleHideJobDescPopover(); });
+    document.body.appendChild(el);
+    _jobDescPopover = el;
+    return el;
+}
+
+function hideJobDescPopover() {
+    _jobDescActiveCell = null;
+    if (_jobDescPopover) {
+        _jobDescPopover.hidden = true;
+        _jobDescPopover.classList.remove('is-visible');
+    }
+}
+
+function scheduleHideJobDescPopover(delayMs) {
+    clearTimeout(_jobDescHideTimer);
+    _jobDescHideTimer = setTimeout(hideJobDescPopover, delayMs == null ? 140 : delayMs);
+}
+
+function isJobDescHoverTarget(el) {
+    if (!el || !el.closest) return false;
+    return !!(el.closest('.company-cell--has-desc') || el.closest('#jobDescPopover'));
+}
+
+function showJobDescPopover(anchor, meta) {
+    var desc = meta && meta.description ? String(meta.description).trim() : '';
+    if (!desc || !anchor) return;
+    var pop = ensureJobDescPopover();
+    var company = (meta.company || '').trim();
+    var position = (meta.position || '').trim();
+    pop.querySelector('.job-desc-popover__company').textContent = company || '—';
+    pop.querySelector('.job-desc-popover__position').textContent = position || '—';
+    pop.querySelector('.job-desc-popover__position').style.display = position ? '' : 'none';
+    var bodyEl = pop.querySelector('.job-desc-popover__body');
+    bodyEl.textContent = desc;
+    bodyEl.scrollTop = 0;
+    _jobDescActiveCell = anchor;
+    pop.hidden = false;
+    pop.classList.add('is-visible');
+    pop.style.visibility = 'hidden';
+    pop.style.left = '0';
+    pop.style.top = '0';
+    var rect = anchor.getBoundingClientRect();
+    var pw = pop.offsetWidth;
+    var ph = pop.offsetHeight;
+    var gap = 6;
+    var left = rect.left;
+    var top = rect.bottom + 2;
+    if (left + pw > window.innerWidth - 16) left = Math.max(16, window.innerWidth - 16 - pw);
+    if (left < 16) left = 16;
+    if (top + ph > window.innerHeight - 16) top = Math.max(16, rect.top - ph - gap);
+    pop.style.left = Math.round(left) + 'px';
+    pop.style.top = Math.round(top) + 'px';
+    pop.style.visibility = '';
+}
+
+function readJobDescFromCell(cell) {
+    var store = cell.querySelector('.job-desc-store');
+    if (!store) return null;
+    var desc = (store.textContent || '').trim();
+    if (!desc) return null;
+    var nameEl = cell.querySelector('.company-name');
+    var posEl = cell.querySelector('.company-position');
+    return {
+        company: nameEl ? nameEl.textContent : '',
+        position: posEl ? posEl.textContent : '',
+        description: desc
+    };
+}
+
+function setupJobDescriptionHoverGlobal() {
+    if (window._jobDescHoverReady) return;
+    window._jobDescHoverReady = true;
+    document.addEventListener('mouseover', function (e) {
+        if (e.target.closest('#jobDescPopover')) {
+            clearTimeout(_jobDescHideTimer);
+            return;
+        }
+        var cell = e.target.closest('.company-cell--has-desc');
+        if (cell) {
+            clearTimeout(_jobDescHideTimer);
+            if (cell === _jobDescActiveCell) return;
+            var meta = readJobDescFromCell(cell);
+            if (meta) showJobDescPopover(cell, meta);
+            return;
+        }
+        if (_jobDescPopover && !_jobDescPopover.hidden) scheduleHideJobDescPopover();
+    });
+    document.addEventListener('mouseout', function (e) {
+        var fromCell = e.target.closest('.company-cell--has-desc');
+        var fromPop = e.target.closest('#jobDescPopover');
+        if (!fromCell && !fromPop) return;
+        var to = e.relatedTarget;
+        if (isJobDescHoverTarget(to)) return;
+        scheduleHideJobDescPopover();
+    });
+    document.addEventListener('scroll', function (e) {
+        if (e.target && e.target.closest && e.target.closest('#jobDescPopover')) return;
+        if (_jobDescPopover && !_jobDescPopover.hidden) hideJobDescPopover();
+    }, true);
+    window.addEventListener('resize', function () {
+        if (_jobDescPopover && !_jobDescPopover.hidden) hideJobDescPopover();
+    });
+}
+
+function initJobDescriptionHovers(root) {
+    setupJobDescriptionHoverGlobal();
+}
+
+setupJobDescriptionHoverGlobal();
+
+/** 置顶：叠在公司头像角标上，不占正文排版空间（仅图标，无文字） */
+function pinnedLogoMarkerHtml(pinned) {
+    if (!pinned) return '';
+    return '<span class="pin-marker" title="已置顶" aria-label="已置顶"><svg viewBox="0 0 24 24" width="10" height="10" aria-hidden="true"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 4.52 4.03 10.27 6.11 12.81a1.5 1.5 0 002.78 0C15.97 19.27 19 13.52 19 9c0-3.87-3.13-7-7-7zm0 9.25a2.25 2.25 0 110-4.5 2.25 2.25 0 010 4.5z"/></svg></span>';
+}
+
+// ═══════════════════════════════════════════════
+//  Round Colors
+// ═══════════════════════════════════════════════
+const roundColorMap = {
+    '笔试': '#6366F1', '一面': '#22C55E', '二面': '#F59E0B',
+    '三面': '#F97316', 'HR面': '#9333EA', 'offer': '#EC4899'
+};
+const roundBgMap = {
+    '笔试': '#EEF2FF', '一面': '#F0FDF4', '二面': '#FFFBEB',
+    '三面': '#FFF7ED', 'HR面': '#FAF5FF', 'offer': '#FDF2F8'
+};
+const catColorMap = {
+    'llm_algo': { color: '#6366F1', bg: '#EEF2FF' },
+    'agent': { color: '#22C55E', bg: '#F0FDF4' },
+    'llm_app': { color: '#F59E0B', bg: '#FFFBEB' },
+    'aigc': { color: '#EC4899', bg: '#FDF2F8' },
+    'infra': { color: '#9333EA', bg: '#FAF5FF' },
+    'other': { color: '#6B7280', bg: '#F3F4F6' },
+    // 岗位速递：柔和浅底 + 略深标签色（易读、耐看，色相区分行业）
+    'internet': { bg: '#EDE9FE', color: '#5B21B6' },
+    'finance': { bg: '#ECFDF5', color: '#047857' },
+    'game': { bg: '#FAE8FF', color: '#86198F' },
+    'hardware': { bg: '#E0F2FE', color: '#075985' },
+    'car': { bg: '#FFEDD5', color: '#9A3412' },
+    'ai': { bg: '#EEF2FF', color: '#4338CA' },
+    'manufacturing': { bg: '#F1F5F9', color: '#334155' },
+    'state': { bg: '#FEF9C3', color: '#854D0E' },
+};
+const catLabelMap = {
+    'llm_algo': '大模型算法', 'agent': 'Agent开发', 'llm_app': '大模型应用',
+    'aigc': 'AIGC', 'infra': '基础架构', 'other': '其他',
+    // Job links categories
+    'internet': '互联网', 'manufacturing': '制造业', 'finance': '金融银行',
+    'game': '游戏', 'hardware': '硬件', 'car': '汽车', 'ai': '人工智能',
+    'state': '央国企'
+};
+
+/** 岗位速递 · Tab 顺序 & 「全部」列表分组排序 */
+const JOB_LINK_CATEGORY_ORDER = ['internet', 'ai', 'hardware', 'car', 'game', 'finance', 'other'];
+const JOB_LINK_FILTER_KEYS = ['all'].concat(JOB_LINK_CATEGORY_ORDER);
+
+function jlCategorySortIndex(cat) {
+    var k = cat != null && String(cat).trim() ? String(cat).trim() : 'other';
+    var i = JOB_LINK_CATEGORY_ORDER.indexOf(k);
+    return i >= 0 ? i : JOB_LINK_CATEGORY_ORDER.length;
+}
+
+function jlSortJobLinksByCategoryAndOrder(items) {
+    return (items || []).slice().sort(function (a, b) {
+        var ca = jlCategorySortIndex(a.category);
+        var cb = jlCategorySortIndex(b.category);
+        if (ca !== cb) return ca - cb;
+        return (a.sort_order || 0) - (b.sort_order || 0);
+    });
+}
+
+function jlCategorySelectOptionsHtml(selected) {
+    var pairs = [
+        ['internet', '互联网'],
+        ['ai', '人工智能'],
+        ['hardware', '硬件'],
+        ['car', '汽车'],
+        ['game', '游戏'],
+        ['finance', '金融银行'],
+        ['other', '其他'],
+    ];
+    return pairs
+        .map(function (pair) {
+            return (
+                '<option value="' +
+                pair[0] +
+                '"' +
+                (selected === pair[0] ? ' selected' : '') +
+                '>' +
+                pair[1] +
+                '</option>'
+            );
+        })
+        .join('');
+}
+
+/** 岗位速递卡片：规范化 category，避免 null/未知键导致样式丢失 */
+function jobLinkCategoryColors(raw) {
+    var k = raw != null && String(raw).trim() ? String(raw).trim() : 'other';
+    var row = catColorMap[k];
+    if (row) return row;
+    return catColorMap.other;
+}
+
+/** 岗位速递：占位岗位不在卡片上展示（如「无」） */
+function jlPositionForDisplay(raw) {
+    var s = String(raw || '').trim();
+    if (!s || s === '无' || s === '-' || s === '—' || /^n\/?a$/i.test(s)) return '';
+    return s;
+}
+
+function jlPositionForSubmit(raw) {
+    return typeof jlPositionForDisplay === 'function' ? jlPositionForDisplay(raw) : String(raw || '').trim();
+}
+
+function jlPositionCardHtml(raw) {
+    var s = jlPositionForDisplay(raw);
+    if (!s) return '';
+    return '<div class="job-link-position">' + escHtml(s) + '</div>';
+}
+
+/** 岗位速递 · 投递渠道（写入 job_links.source，值为 slug） */
+var JL_DELIVERY_SOURCE_OPTIONS = [
+    ['official', '官网投递'],
+    ['unspecified', '未标注'],
+    ['boss', 'Boss直聘'],
+    ['zhilian', '智联招聘'],
+    ['job51', '前程无忧'],
+    ['lagou', '拉勾网'],
+    ['shixiseng', '实习僧'],
+    ['liepin', '猎聘'],
+    ['nowcoder', '牛客网'],
+    ['maimai', '脉脉'],
+    ['other_platform', '其他招聘平台'],
+];
+var jlDeliverySourceLabelMap = {};
+JL_DELIVERY_SOURCE_OPTIONS.forEach(function (p) {
+    jlDeliverySourceLabelMap[p[0]] = p[1];
+});
+
+function jlNormalizeDeliverySource(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return 'unspecified';
+    if (jlDeliverySourceLabelMap[s]) return s;
+    if (/boss|直聘/i.test(s)) return 'boss';
+    if (/智联/i.test(s)) return 'zhilian';
+    if (/前程|51\s*job|51job/i.test(s)) return 'job51';
+    if (/拉勾/i.test(s)) return 'lagou';
+    if (/实习僧/i.test(s)) return 'shixiseng';
+    if (/猎聘/i.test(s)) return 'liepin';
+    if (/牛客/i.test(s)) return 'nowcoder';
+    if (/脉脉/i.test(s)) return 'maimai';
+    if (/官网|官方|校招官网/i.test(s)) return 'official';
+    return 'other_platform';
+}
+
+function jlDeliverySourceLabel(slug) {
+    slug = jlNormalizeDeliverySource(slug);
+    return jlDeliverySourceLabelMap[slug] || jlDeliverySourceLabelMap.other_platform;
+}
+
+function jlDeliverySourceSelectHtml(selectedSlug) {
+    var sel = jlNormalizeDeliverySource(selectedSlug);
+    if (sel === 'unspecified') sel = 'official';
+    return JL_DELIVERY_SOURCE_OPTIONS.map(function (pair) {
+        return '<option value="' + pair[0] + '"' + (sel === pair[0] ? ' selected' : '') + '>' + pair[1] + '</option>';
+    }).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  Init — Turbo 会替换 .main，须在每次导航后重新同步预览条等顶栏状态
+// ═══════════════════════════════════════════════
+function reapplyUserChromeAfterNavigate() {
+    if (gUser && shouldApplyUser(gUser)) {
+        /* local OSS: chrome already shows fixed user card */
+    } else {
+        loadUser().catch(function () {});
+    }
+}
+
+document.addEventListener('turbo:load', reapplyUserChromeAfterNavigate);
+document.addEventListener('DOMContentLoaded', function () { loadUser(); });
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

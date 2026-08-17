@@ -1,0 +1,747 @@
+{% extends "base.html" %}
+
+{% block title %}邮箱读取 - OfferFlow{% endblock %}
+{% block page_title %}邮箱读取{% endblock %}
+{% block active_page %}mail_read{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/mail-demo.css?v=20260606demo6">
+<link rel="stylesheet" href="/static/css/mail-ai-parse.css?v=20260720mailai1">
+{% endblock %}
+
+{% block header_actions %}
+<button type="button" class="btn btn-secondary btn-sm" id="mailDemoTrigger" title="体验邮件解析与投递同步全流程">邮件模拟</button>
+<button type="button" class="btn btn-secondary btn-sm" onclick="openMailSettings()">邮箱设置</button>
+<button type="button" class="btn btn-secondary btn-sm" id="icOpenConfigBtn">模型配置</button>
+<button type="button" class="btn btn-primary btn-sm" onclick="refreshMail(true)">刷新收件箱</button>
+{% endblock %}
+
+{% block content %}
+<div class="mail-page-shell">
+<div class="mail-app" id="mailApp">
+    <div class="mail-pane-left" id="mailPaneLeft">
+        <aside class="mail-sidebar">
+            <div class="mail-sidebar__head">邮箱</div>
+            <button type="button" class="mail-account-btn active" id="mailTabPrimary" data-slot="primary" onclick="switchMailSlot('primary')">
+                <div class="mail-account-btn__label">主邮箱</div>
+                <div class="mail-account-btn__addr" id="mailDispPrimary">—</div>
+            </button>
+            <button type="button" class="mail-account-btn" id="mailTabSecondary" data-slot="secondary" onclick="switchMailSlot('secondary')">
+                <div class="mail-account-btn__label">第二邮箱</div>
+                <div class="mail-account-btn__addr" id="mailDispSecondary">未配置</div>
+            </button>
+            <div class="mail-sidebar__sep"></div>
+            <div class="mail-folder mail-folder--active">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <span>收件箱</span>
+                <span class="mail-folder__badge" id="mailInboxUnreadBadge" style="display:none">0</span>
+            </div>
+        </aside>
+        <div class="mail-list-col">
+            <div class="mail-list-toolbar">
+                <div class="mail-list-toolbar__top">
+                    <span class="mail-list-toolbar__title" id="mailListTitle">收件箱</span>
+                    <button type="button" class="mail-list-toolbar__readall" id="mailMarkAllReadBtn" onclick="markAllMailRead()">全部读取</button>
+                </div>
+                <span class="mail-list-toolbar__hint" id="mailListHint"></span>
+            </div>
+            <div class="mail-list-scroll" id="mailListRoot">
+                <div class="mail-list-empty">加载中…</div>
+            </div>
+        </div>
+    </div>
+    <div class="mail-pane-resizer" id="mailResizer" role="separator" aria-orientation="vertical" aria-label="拖动调整左侧宽度" tabindex="0"></div>
+    <div class="mail-preview-col">
+        <div class="mail-preview-toolbar" id="mailPreviewMeta" style="display:none;">
+            <div class="mail-preview-subject" id="mailPvSubject"></div>
+            <div class="mail-preview-meta-row">
+                <span id="mailPvFrom"></span>
+                <span class="mail-preview-date" id="mailPvDate"></span>
+            </div>
+        </div>
+        <div class="mail-preview-body" id="mailPreviewBody">
+            <div class="mail-preview-placeholder">选择一封邮件查看正文</div>
+        </div>
+    </div>
+</div>
+
+<button type="button" class="ic-mail-fab" id="icMailFab" aria-label="打开邮箱解析" title="邮箱解析" aria-expanded="false">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+    <span class="ic-mail-fab__badge" id="icMailFabBadge" hidden>0</span>
+</button>
+
+<div class="ic-mail-dock" id="icMailDock" aria-hidden="true">
+    <div class="ic-mail-dock__backdrop" id="icMailDockBackdrop"></div>
+    <div class="ic-mail-dock__panel" role="dialog" aria-labelledby="icMailDockTitle">
+        <header class="ic-mail-dock__head">
+            <div>
+                <h3 id="icMailDockTitle">邮箱解析</h3>
+                <p>新邮件自动摘要，点击查看详情</p>
+            </div>
+            <button type="button" class="ic-mail-dock__close" id="icMailDockClose" aria-label="关闭">×</button>
+        </header>
+        <div class="ic-mail-dock__sync">
+            <span class="ic-rail__sync-dot" id="icSyncDot" title="同步状态"></span>
+            <span>邮件解析</span>
+            <button type="button" class="ic-btn ic-btn--sm" id="icDockSyncBtn">立即同步</button>
+        </div>
+        <div class="ic-mail-dock__list" id="icMailDockList"></div>
+        <div class="ic-mail-dock__detail" id="icMailDockDetail" hidden>
+            <button type="button" class="ic-mail-dock__back" id="icMailDetailBack">返回列表</button>
+            <div class="ic-mail-detail__body" id="icMailDetailBody"></div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="ic-config-backdrop" id="icConfigBackdrop" aria-hidden="true"></div>
+<aside class="ic-config" id="icConfigPanel" aria-label="模型配置" aria-hidden="true">
+    <div class="ic-config__head">
+        <div>
+            <h3>模型配置</h3>
+            <p>OpenAI 兼容接口 · Base URL、API Key、模型名称</p>
+        </div>
+        <button type="button" class="btn btn-icon btn-ghost" id="icConfigClose" aria-label="关闭">×</button>
+    </div>
+    <div class="ic-config__body">
+        <p class="ic-privacy-note">请放心，我们会严格保护您的私密信息。API Key 经服务端加密存储，仅用于调用您配置的模型，不会明文保存或向第三方披露。</p>
+        <div class="ic-field">
+            <label for="icProvider">服务商</label>
+            <select id="icProvider"></select>
+            <p class="ic-field__hint">已收录国内主流 API（DeepSeek、通义、智谱、Kimi、豆包等）</p>
+        </div>
+        <div class="ic-field">
+            <label for="icBaseUrl">Base URL</label>
+            <input type="url" id="icBaseUrl" placeholder="https://api.example.com/v1" autocomplete="off">
+        </div>
+        <div class="ic-field">
+            <label for="icModelInput">模型名称</label>
+            <input type="text" id="icModelInput" list="icModelSuggestions" placeholder="手动输入模型 ID，如 deepseek-chat" autocomplete="off" spellcheck="false">
+            <datalist id="icModelSuggestions"></datalist>
+            <p class="ic-field__hint">支持任意 OpenAI 兼容模型名；切换服务商后可在输入框下拉中选推荐模型</p>
+        </div>
+        <div class="ic-field">
+            <label for="icApiKey">API Key</label>
+            <input type="password" id="icApiKey" placeholder="留空则保持已保存的 Key" autocomplete="off">
+            <p class="ic-field__hint" id="icApiKeyHint">API Key 加密保存，留空表示不修改已保存的 Key</p>
+        </div>
+        <div class="ic-toggle">
+            <div>
+                <strong style="font-size:0.8rem;">新邮件自动解析</strong>
+                <p class="ic-field__hint" style="margin:4px 0 0;">收到新邮件并出现未读标记时即生成摘要（需配置 API）</p>
+            </div>
+            <input type="checkbox" id="icAutoParse" checked>
+        </div>
+        <button type="button" class="ic-btn" id="icCheckBtn" style="width:100%;margin-top:8px;">Check availability</button>
+        <div class="ic-check-result" id="icCheckResult" role="status"></div>
+    </div>
+    <div class="ic-config__foot">
+        <button type="button" class="btn btn-secondary" id="icConfigCancel">取消</button>
+        <button type="button" class="btn btn-primary" id="icConfigSave">保存配置</button>
+    </div>
+</aside>
+
+<div class="ic-config-backdrop" id="mailSettingsBackdrop" aria-hidden="true"></div>
+<aside class="ic-config" id="mailSettingsPanel" aria-label="邮箱设置" aria-hidden="true">
+    <div class="ic-config__head">
+        <div>
+            <h3>邮箱设置</h3>
+            <p>IMAP 授权码 · 主邮箱与第二邮箱</p>
+        </div>
+        <button type="button" class="btn btn-icon btn-ghost" id="mailSettingsClose" aria-label="关闭">×</button>
+    </div>
+    <div class="ic-config__body">
+        <p class="ic-privacy-note">请放心，我们会严格保护您的私密信息。IMAP 授权码经服务端加密存储，仅用于为您读取邮件，不会明文保存或向第三方披露。</p>
+        <p class="mail-settings-tip">请在对应邮箱网页设置中开启 IMAP，并使用「客户端授权码」（不是登录密码）。</p>
+        <div class="mail-settings-section">
+            <div class="mail-settings-h">主邮箱（注册邮箱）</div>
+            <div class="ic-field">
+                <label for="msPrimaryEmail">邮箱地址</label>
+                <input type="text" id="msPrimaryEmail" readonly style="opacity:0.85">
+            </div>
+            <div class="ic-field">
+                <label for="msPrimaryProv">邮箱类型</label>
+                <select id="msPrimaryProv">
+                    <option value="">请选择</option>
+                    <option value="qq">QQ 邮箱 / Foxmail（imap.qq.com）</option>
+                    <option value="163">163 邮箱</option>
+                    <option value="126">126 邮箱</option>
+                    <option value="yeah">Yeah 邮箱</option>
+                    <option value="188">188 邮箱（网易）</option>
+                    <option value="foxmail">Foxmail（同 QQ）</option>
+                    <option value="other">自定义 IMAP</option>
+                </select>
+            </div>
+            <div class="ic-field" id="msPrimaryHostWrap" hidden>
+                <label for="msPrimaryHost">IMAP 服务器</label>
+                <input type="text" id="msPrimaryHost" placeholder="例如 imap.example.com" autocomplete="off">
+            </div>
+            <div class="ic-field">
+                <label for="msPrimaryAuth">授权码</label>
+                <input type="password" id="msPrimaryAuth" placeholder="留空则不修改" autocomplete="new-password">
+                <p class="ic-field__hint">授权码加密保存，留空表示不修改已保存的授权码</p>
+            </div>
+            <label class="mail-settings-clear"><input type="checkbox" id="msClearPrimary"> 清除主邮箱已保存的授权码</label>
+        </div>
+        <div class="mail-settings-section">
+            <div class="mail-settings-h">第二邮箱（选填）</div>
+            <div class="ic-field">
+                <label for="msSecEmail">邮箱地址</label>
+                <input type="email" id="msSecEmail" placeholder="不填则关闭第二邮箱监控" autocomplete="email">
+            </div>
+            <div class="ic-field">
+                <label for="msSecProv">邮箱类型</label>
+                <select id="msSecProv">
+                    <option value="">请选择</option>
+                    <option value="qq">QQ 邮箱 / Foxmail（imap.qq.com）</option>
+                    <option value="163">163 邮箱</option>
+                    <option value="126">126 邮箱</option>
+                    <option value="yeah">Yeah 邮箱</option>
+                    <option value="188">188 邮箱（网易）</option>
+                    <option value="foxmail">Foxmail（同 QQ）</option>
+                    <option value="other">自定义 IMAP</option>
+                </select>
+            </div>
+            <div class="ic-field" id="msSecHostWrap" hidden>
+                <label for="msSecHost">IMAP 服务器</label>
+                <input type="text" id="msSecHost" placeholder="例如 imap.example.com" autocomplete="off">
+            </div>
+            <div class="ic-field">
+                <label for="msSecAuth">授权码</label>
+                <input type="password" id="msSecAuth" placeholder="留空则不修改" autocomplete="new-password">
+                <p class="ic-field__hint">授权码加密保存，留空表示不修改已保存的授权码</p>
+            </div>
+            <label class="mail-settings-clear"><input type="checkbox" id="msClearSecondary"> 清除第二邮箱已保存的授权码</label>
+        </div>
+    </div>
+    <div class="ic-config__foot">
+        <button type="button" class="btn btn-secondary" id="mailSettingsCancel">取消</button>
+        <button type="button" class="btn btn-primary" id="mailSettingsSave">保存配置</button>
+    </div>
+</aside>
+
+<div class="mail-demo" id="mailDemoRoot" aria-hidden="true">
+    <div class="mail-demo__backdrop" id="mailDemoBackdrop"></div>
+    <div class="mail-demo__dialog" role="dialog" aria-modal="true" aria-labelledby="mailDemoTitle">
+        <div class="mail-demo__hero" aria-hidden="false">
+            <div class="mail-demo__hero-glow" aria-hidden="true"></div>
+            <header class="mail-demo__head">
+                <div class="mail-demo__head-copy">
+                    <div class="mail-demo__badge">
+                        <span class="mail-demo__badge-dot" aria-hidden="true"></span>
+                        Offer 智能管理
+                    </div>
+                    <h2 id="mailDemoTitle">邮件模拟</h2>
+                    <p>选择一家公司，系统将发送模拟笔试邀请至绑定邮箱；象遇自动读取、解析并同步投递记录。</p>
+                </div>
+                <button type="button" class="mail-demo__close" id="mailDemoClose" aria-label="关闭">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </header>
+            <ol class="mail-demo__flow">
+                <li class="mail-demo__flow-item">
+                    <span class="mail-demo__flow-icon" aria-hidden="true">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+                    </span>
+                    <span class="mail-demo__flow-text"><strong>发送</strong>模拟邀请</span>
+                </li>
+                <li class="mail-demo__flow-item">
+                    <span class="mail-demo__flow-icon" aria-hidden="true">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+                    </span>
+                    <span class="mail-demo__flow-text"><strong>收取</strong>并解析</span>
+                </li>
+                <li class="mail-demo__flow-item">
+                    <span class="mail-demo__flow-icon" aria-hidden="true">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M5 10h14"/><path d="M5 14h8"/></svg>
+                    </span>
+                    <span class="mail-demo__flow-text"><strong>同步</strong>投递记录</span>
+                </li>
+            </ol>
+        </div>
+        <div class="mail-demo__body">
+            <div class="mail-demo__section">
+                <div class="mail-demo__section-head">
+                    <h3>选择模拟笔试邀请</h3>
+                    <span>四选一</span>
+                </div>
+                <div class="mail-demo__grid" id="mailDemoGrid"></div>
+            </div>
+        </div>
+        <footer class="mail-demo__foot">
+            <div class="mail-demo__foot-top">
+                <div class="mail-demo__meta" id="mailDemoMeta">加载中…</div>
+                <div class="mail-demo__warn" id="mailDemoWarn" hidden>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span class="mail-demo__warn-text"></span>
+                </div>
+            </div>
+            <button type="button" class="mail-demo__send" id="mailDemoSend" disabled>
+                <span class="mail-demo__send-label">发送模拟笔试邮件</span>
+                <svg class="mail-demo__send-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+        </footer>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script defer src="/static/js/mail-demo.js?v=20260606demo7"></script>
+<script defer src="/static/js/mail-ai-parse.js?v=20260720mailai1"></script>
+<script>
+var mailCurSlot = 'primary';
+var mailItems = [];
+var mailSettings = null;
+var mailUnreadKeys = {};
+
+function mailEscAttr(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function mailEscSrcdoc(html) {
+    return String(html || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function mailTryShowStaleList() {
+    try {
+        var raw = sessionStorage.getItem('offerflow_mail_list_' + mailCurSlot);
+        if (!raw) return;
+        var o = JSON.parse(raw);
+        if (!o || !Array.isArray(o.items) || !o.items.length) return;
+        mailItems = o.items;
+        renderMailList();
+        var hint = document.getElementById('mailListHint');
+        if (hint) hint.textContent = (o.mailbox ? ('当前：' + o.mailbox + ' · ') : '') + '缓存展示中，正在核对…';
+    } catch (e) {}
+}
+
+var MAIL_PANE_W_KEY = 'offerflow_mail_pane_left_w';
+
+function initMailPaneResize() {
+    var app = document.getElementById('mailApp');
+    var pane = document.getElementById('mailPaneLeft');
+    var resizer = document.getElementById('mailResizer');
+    if (!app || !pane || !resizer || resizer.dataset.bound === '1') return;
+    resizer.dataset.bound = '1';
+
+    try {
+        var saved = localStorage.getItem(MAIL_PANE_W_KEY);
+        if (saved) {
+            var n = parseInt(saved, 10);
+            if (!isNaN(n) && n >= 250) app.style.setProperty('--mail-pane-left-width', n + 'px');
+        }
+    } catch (e) {}
+
+    function clamp(w) {
+        var rect = app.getBoundingClientRect();
+        var min = 250;
+        var max = Math.max(min + 120, rect.width - 260);
+        return Math.min(max, Math.max(min, w));
+    }
+
+    function setWidth(px) {
+        px = clamp(px);
+        app.style.setProperty('--mail-pane-left-width', Math.round(px) + 'px');
+        try {
+            localStorage.setItem(MAIL_PANE_W_KEY, String(Math.round(px)));
+        } catch (e) {}
+    }
+
+    var dragging = false;
+    var startX = 0;
+    var startW = 0;
+
+    function endDrag() {
+        if (!dragging) return;
+        dragging = false;
+        resizer.classList.remove('mail-pane-resizer--dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+    }
+
+    resizer.addEventListener('pointerdown', function(e) {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        dragging = true;
+        startX = e.clientX;
+        startW = pane.getBoundingClientRect().width;
+        resizer.classList.add('mail-pane-resizer--dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        try {
+            resizer.setPointerCapture(e.pointerId);
+        } catch (err) {}
+    });
+
+    resizer.addEventListener('pointermove', function(e) {
+        if (!dragging) return;
+        setWidth(startW + e.clientX - startX);
+    });
+
+    resizer.addEventListener('pointerup', function(e) {
+        try {
+            resizer.releasePointerCapture(e.pointerId);
+        } catch (err) {}
+        endDrag();
+    });
+
+    resizer.addEventListener('pointercancel', endDrag);
+
+    resizer.addEventListener('keydown', function(e) {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        var w = pane.getBoundingClientRect().width;
+        setWidth(w + (e.key === 'ArrowRight' ? 20 : -20));
+    });
+}
+
+function initMailReadPage() {
+    var app = document.getElementById('mailApp');
+    if (!document.getElementById('mailListRoot') || !app) return;
+    if (app.getAttribute('data-of-booted') === '1') return;
+    app.setAttribute('data-of-booted', '1');
+    mailTryShowStaleList();
+    initMailPaneResize();
+    loadUser().then(function() {
+        return api('/api/mail/settings');
+    }).then(function(s) {
+        mailSettings = s;
+        applyMailSettingsUi();
+        if (window.OfferFlowIvory && OfferFlowIvory.getUnreadMap) {
+            applyMailUnreadFromMap(OfferFlowIvory.getUnreadMap());
+        }
+        return refreshMail(false);
+    }).catch(function(e) {
+        var r = document.getElementById('mailListRoot');
+        var msg = e.message || '加载失败';
+        if (window.gUserIsPreview) {
+            msg = '预览模式可先浏览页面。注册正式账号后，可在「邮箱设置」中配置 IMAP 并读取邮件。';
+        } else if (e.code === 'membership_required') {
+            msg = '当前账号可浏览页面；连接邮箱读取需开通会员，或请先在「邮箱设置」中配置 IMAP。';
+        }
+        if (r) r.innerHTML = '<div class="mail-list-empty mail-list-empty--err">' + escHtml(msg) + '</div>';
+    });
+}
+
+function mailUnreadKey(slot, seq) {
+    return String(slot || '') + ':' + String(seq || '');
+}
+
+function applyMailUnreadFromMap(map) {
+    mailUnreadKeys = map || {};
+    renderMailList();
+}
+
+function markAllMailRead() {
+    var btn = document.getElementById('mailMarkAllReadBtn');
+    if (btn) btn.disabled = true;
+    api('/api/mail/mark-all-seen', { method: 'POST', body: {} })
+        .then(function (res) {
+            mailUnreadKeys = {};
+            renderMailList();
+            if (window.OfferFlowIvory && OfferFlowIvory.refreshUnreadBadges) {
+                OfferFlowIvory.refreshUnreadBadges();
+            }
+            var n = res && typeof res.marked === 'number' ? res.marked : 0;
+            if (typeof toast === 'function') {
+                toast(n > 0 ? ('已将 ' + n + ' 封邮件标为已读') : '当前没有未读邮件', n > 0 ? 'success' : 'info');
+            }
+        })
+        .catch(function (e) {
+            if (typeof toast === 'function') toast(e.message || '操作失败', 'error');
+        })
+        .finally(function () {
+            if (btn) btn.disabled = false;
+        });
+}
+
+function mailOnMailOpened(slot, seq) {
+    var key = mailUnreadKey(slot, seq);
+    var hadUnread = !!mailUnreadKeys[key];
+    delete mailUnreadKeys[key];
+    if (hadUnread) renderMailList();
+    var body = { mail_slot: slot, mail_seq: String(seq) };
+    var req = window.OfferFlowIvory && OfferFlowIvory.markMailSeenQuiet
+        ? OfferFlowIvory.markMailSeenQuiet(body)
+        : api('/api/mail/mark-seen', { method: 'POST', body: body });
+    req.then(function () {
+        delete mailUnreadKeys[key];
+        renderMailList();
+    }).catch(function () {});
+}
+
+if (!window.__ofMailReadTurboBound) {
+    window.__ofMailReadTurboBound = true;
+    document.addEventListener('turbo:load', initMailReadPage);
+    document.addEventListener('turbo:before-cache', function () {
+        if (typeof closeMailSettingsPanel === 'function') closeMailSettingsPanel();
+        if (window.OfferFlowMailDemo && OfferFlowMailDemo.close) OfferFlowMailDemo.close();
+    });
+    document.addEventListener('offerflow:mail-unread', function (e) {
+        if (!document.getElementById('mailApp')) return;
+        applyMailUnreadFromMap((e.detail && e.detail.map) || {});
+    });
+}
+initMailReadPage();
+
+function applyMailSettingsUi() {
+    if (!mailSettings) return;
+    document.getElementById('mailDispPrimary').textContent = mailSettings.primary_email || '—';
+    var sec = mailSettings.secondary_email;
+    document.getElementById('mailDispSecondary').textContent = sec || '未配置';
+    var t2 = document.getElementById('mailTabSecondary');
+    if (t2) t2.classList.toggle('mail-account-btn--disabled', !mailSettings.secondary_configured);
+}
+
+function switchMailSlot(slot) {
+    if (!slot) return;
+    mailCurSlot = slot;
+    document.getElementById('mailTabPrimary').classList.toggle('active', slot === 'primary');
+    document.getElementById('mailTabSecondary').classList.toggle('active', slot === 'secondary');
+    if (slot === 'secondary' && mailSettings && !mailSettings.secondary_configured) {
+        toast('请先在「邮箱设置」中配置第二邮箱', 'warning');
+        switchMailSlot('primary');
+        return;
+    }
+    mailItems = [];
+    mailTryShowStaleList();
+    refreshMail(true);
+}
+
+function refreshMail(forceRemote) {
+    var root = document.getElementById('mailListRoot');
+    var hint = document.getElementById('mailListHint');
+    if (forceRemote) {
+        if (!mailItems.length) {
+            root.innerHTML = '<div class="mail-list-empty">正在同步邮箱…</div>';
+            if (hint) hint.textContent = '';
+        } else if (hint) {
+            hint.textContent = '正在同步…';
+        }
+    } else if (!mailItems.length) {
+        root.innerHTML = '<div class="mail-list-empty">正在连接邮箱…</div>';
+        if (hint) hint.textContent = '';
+    } else if (hint && hint.textContent.indexOf('缓存') === -1 && hint.textContent.indexOf('当前：') === -1) {
+        hint.textContent = '后台核对中…';
+    }
+
+    var url = '/api/mail/messages?slot=' + encodeURIComponent(mailCurSlot) + '&limit=50';
+    if (forceRemote) url += '&refresh=true';
+
+    return api(url).then(function(res) {
+        mailItems = res.items || [];
+        if (hint) hint.textContent = res.mailbox ? ('当前：' + res.mailbox) : '';
+        try {
+            sessionStorage.setItem('offerflow_mail_list_' + mailCurSlot, JSON.stringify({ mailbox: res.mailbox || '', items: mailItems }));
+        } catch (e) {}
+        renderMailList();
+        clearMailPreview();
+    }).catch(function(e) {
+        if (!mailItems.length) {
+            root.innerHTML = '<div class="mail-list-empty mail-list-empty--err">' + escHtml(e.message || '加载失败') + '</div>';
+        } else if (hint) {
+            hint.textContent = (hint.textContent || '') + '（同步失败：' + String(e.message || '错误') + '）';
+        }
+    });
+}
+
+function renderMailList() {
+    var root = document.getElementById('mailListRoot');
+    if (!mailItems.length) {
+        root.innerHTML = '<div class="mail-list-empty">暂无邮件，或尚未配置 IMAP 授权码</div>';
+        return;
+    }
+    var h = '';
+    for (var i = 0; i < mailItems.length; i++) {
+        var m = mailItems[i];
+        var unread = !!mailUnreadKeys[mailUnreadKey(mailCurSlot, m.uid)];
+        h += '<button type="button" class="mail-row' + (unread ? ' mail-row--unread' : '') + '" data-idx="' + i + '" onclick="selectMailRow(' + i + ')">' +
+            '<div class="mail-row__subj-wrap">' +
+            (unread ? '<span class="mail-row__dot" aria-hidden="true"></span>' : '') +
+            '<div class="mail-row__subj mail-row__subj-text">' + escHtml(m.subject) + '</div></div>' +
+            '<div class="mail-row__line2"><span class="mail-row__from">' + escHtml(m.from_addr) + '</span>' +
+            '<span class="mail-row__date">' + escHtml((m.date || '').replace('T', ' ').substring(0, 19)) + '</span></div>' +
+            '<div class="mail-row__snippet">' + escHtml(m.snippet) + '</div></button>';
+    }
+    root.innerHTML = h;
+}
+
+function renderMailPreviewBody(m) {
+    var bodyEl = document.getElementById('mailPreviewBody');
+    if (m.body_html) {
+        bodyEl.innerHTML = '<iframe class="mail-preview-iframe" title="邮件正文" sandbox="" referrerpolicy="no-referrer" srcdoc="' + mailEscSrcdoc(m.body_html) + '"></iframe>';
+    } else if (m.body_text) {
+        bodyEl.innerHTML = '<pre class="mail-preview-plain">' + escHtml(m.body_text) + '</pre>';
+    } else {
+        bodyEl.innerHTML = '<div class="mail-preview-placeholder">无正文</div>';
+    }
+}
+
+function selectMailRow(idx) {
+    var rows = document.querySelectorAll('.mail-row');
+    rows.forEach(function(r, j) { r.classList.toggle('mail-row--active', j === idx); });
+    var m = mailItems[idx];
+    if (!m) return;
+    document.getElementById('mailPreviewMeta').style.display = '';
+    document.getElementById('mailPvSubject').textContent = m.subject || '';
+    document.getElementById('mailPvFrom').textContent = m.from_addr || '';
+    document.getElementById('mailPvDate').textContent = (m.date || '').replace('T', ' ');
+    var bodyEl = document.getElementById('mailPreviewBody');
+
+    mailOnMailOpened(mailCurSlot, m.uid);
+
+    if (m.body_html || m.body_text) {
+        renderMailPreviewBody(m);
+        return;
+    }
+
+    bodyEl.innerHTML = '<div class="mail-preview-placeholder">加载正文…</div>';
+    api('/api/mail/message-body?slot=' + encodeURIComponent(mailCurSlot) + '&seq=' + encodeURIComponent(m.uid)).then(function(det) {
+        if (!det) return;
+        m.body_html = det.body_html;
+        m.body_text = det.body_text;
+        if (det.subject) document.getElementById('mailPvSubject').textContent = det.subject;
+        if (det.from_addr) document.getElementById('mailPvFrom').textContent = det.from_addr;
+        if (det.date) document.getElementById('mailPvDate').textContent = String(det.date).replace('T', ' ');
+        renderMailPreviewBody(m);
+    }).catch(function(e) {
+        bodyEl.innerHTML = '<div class="mail-preview-placeholder mail-list-empty--err">' + escHtml(e.message || '加载失败') + '</div>';
+    });
+}
+
+function clearMailPreview() {
+    document.getElementById('mailPreviewMeta').style.display = 'none';
+    document.getElementById('mailPreviewBody').innerHTML = '<div class="mail-preview-placeholder">选择一封邮件查看正文</div>';
+    document.querySelectorAll('.mail-row').forEach(function(r) { r.classList.remove('mail-row--active'); });
+}
+
+function openMailSettingsPanel() {
+    var backdrop = document.getElementById('mailSettingsBackdrop');
+    var panel = document.getElementById('mailSettingsPanel');
+    if (!backdrop || !panel) return;
+    backdrop.classList.add('is-open');
+    backdrop.setAttribute('aria-hidden', 'false');
+    panel.classList.add('is-open');
+    panel.setAttribute('aria-hidden', 'false');
+}
+
+function closeMailSettingsPanel() {
+    var backdrop = document.getElementById('mailSettingsBackdrop');
+    var panel = document.getElementById('mailSettingsPanel');
+    if (!backdrop || !panel) return;
+    backdrop.classList.remove('is-open');
+    backdrop.setAttribute('aria-hidden', 'true');
+    panel.classList.remove('is-open');
+    panel.setAttribute('aria-hidden', 'true');
+}
+
+function populateMailSettingsForm(s) {
+    var pe = document.getElementById('msPrimaryEmail');
+    if (pe) pe.value = s.primary_email || '';
+    var pp = document.getElementById('msPrimaryProv');
+    if (pp) pp.value = s.primary_provider || '';
+    var sp = document.getElementById('msSecProv');
+    if (sp) sp.value = s.secondary_provider || '';
+    var em = document.getElementById('msSecEmail');
+    if (em) em.value = s.secondary_email || '';
+    var ph = document.getElementById('msPrimaryHost');
+    if (ph) ph.value = s.primary_imap_host || '';
+    var sh = document.getElementById('msSecHost');
+    if (sh) sh.value = s.secondary_imap_host || '';
+    var pa = document.getElementById('msPrimaryAuth');
+    if (pa) pa.value = '';
+    var sa = document.getElementById('msSecAuth');
+    if (sa) sa.value = '';
+    var clrP = document.getElementById('msClearPrimary');
+    if (clrP) clrP.checked = false;
+    var clrS = document.getElementById('msClearSecondary');
+    if (clrS) clrS.checked = false;
+    toggleMsHost('primary');
+    toggleMsHost('secondary');
+}
+
+function openMailSettings() {
+    api('/api/mail/settings').then(function(s) {
+        mailSettings = s;
+        populateMailSettingsForm(s);
+        openMailSettingsPanel();
+    }).catch(function(e) { toast(e.message, 'error'); });
+}
+
+function toggleMsHost(which) {
+    var prov = which === 'primary' ? document.getElementById('msPrimaryProv') : document.getElementById('msSecProv');
+    var wrap = which === 'primary' ? document.getElementById('msPrimaryHostWrap') : document.getElementById('msSecHostWrap');
+    if (!prov || !wrap) return;
+    wrap.hidden = prov.value !== 'other';
+}
+
+function bindMailSettingsPanel() {
+    if (document.body.getAttribute('data-mail-settings-bound') === '1') return;
+    document.body.setAttribute('data-mail-settings-bound', '1');
+    var pp = document.getElementById('msPrimaryProv');
+    var sp = document.getElementById('msSecProv');
+    if (pp) pp.onchange = function() { toggleMsHost('primary'); };
+    if (sp) sp.onchange = function() { toggleMsHost('secondary'); };
+    var closeBtn = document.getElementById('mailSettingsClose');
+    var cancelBtn = document.getElementById('mailSettingsCancel');
+    var saveBtn = document.getElementById('mailSettingsSave');
+    var backdrop = document.getElementById('mailSettingsBackdrop');
+    if (closeBtn) closeBtn.onclick = closeMailSettingsPanel;
+    if (cancelBtn) cancelBtn.onclick = closeMailSettingsPanel;
+    if (backdrop) backdrop.onclick = closeMailSettingsPanel;
+    if (saveBtn) saveBtn.onclick = saveMailSettings;
+}
+bindMailSettingsPanel();
+
+function saveMailSettings() {
+    var body = {};
+    var pp = document.getElementById('msPrimaryProv');
+    if (pp) body.primary_provider = pp.value || '';
+
+    var ph = document.getElementById('msPrimaryHost');
+    if (ph && ph.value.trim()) body.primary_imap_host = ph.value.trim();
+
+    var pa = document.getElementById('msPrimaryAuth');
+    var clrP = document.getElementById('msClearPrimary');
+    if (clrP && clrP.checked) {
+        body.primary_auth_code = '';
+    } else if (pa && pa.value.length) {
+        if (!pp || !pp.value) {
+            toast('请选择主邮箱类型', 'warning');
+            return;
+        }
+        body.primary_auth_code = pa.value;
+    }
+
+    var se = document.getElementById('msSecEmail');
+    if (se) body.secondary_email = se.value.trim();
+
+    var sp = document.getElementById('msSecProv');
+    if (sp) body.secondary_provider = sp.value || '';
+
+    var sh = document.getElementById('msSecHost');
+    if (sh && sh.value.trim()) body.secondary_imap_host = sh.value.trim();
+
+    var sa = document.getElementById('msSecAuth');
+    var clrS = document.getElementById('msClearSecondary');
+    if (clrS && clrS.checked) {
+        body.secondary_auth_code = '';
+    } else if (sa && sa.value.length) {
+        body.secondary_auth_code = sa.value;
+    }
+
+    api('/api/mail/settings', { method: 'PUT', body: body }).then(function(s) {
+        mailSettings = s;
+        applyMailSettingsUi();
+        closeMailSettingsPanel();
+        toast('已保存');
+        refreshMail(true);
+    }).catch(function(e) { toast(e.message, 'error'); });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,390 @@
+/* 岗位速递 · 外链确认（编辑感排版，无装饰性大图标） */
+.jl-link-confirm-overlay {
+    --jl-confirm-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --jl-confirm-surface: #ffffff;
+    --jl-confirm-ink: #0f121e;
+    --jl-confirm-muted: #6b7280;
+    --jl-confirm-hairline: rgba(15, 18, 30, 0.08);
+
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(16px, env(safe-area-inset-bottom));
+    background: rgba(12, 14, 22, 0.36);
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.36s var(--jl-confirm-ease), visibility 0.36s var(--jl-confirm-ease);
+}
+
+.jl-link-confirm-overlay.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.jl-link-confirm-overlay.is-closing {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+body.jl-link-confirm-open {
+    overflow: hidden;
+}
+
+.jl-link-confirm {
+    position: relative;
+    width: min(100%, 420px);
+    padding: 0;
+    border-radius: 18px;
+    background: var(--jl-confirm-surface);
+    border: 1px solid var(--jl-confirm-hairline);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.65) inset,
+        0 28px 56px -20px rgba(15, 18, 30, 0.22),
+        0 12px 24px -14px rgba(15, 18, 30, 0.12);
+    transform: scale(0.965) translateY(14px);
+    opacity: 0;
+    transition:
+        transform 0.44s var(--jl-confirm-ease),
+        opacity 0.32s var(--jl-confirm-ease);
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+.jl-link-confirm-overlay.is-open .jl-link-confirm {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.jl-link-confirm-overlay.is-closing .jl-link-confirm {
+    transform: scale(0.98) translateY(8px);
+    opacity: 0;
+    transition-duration: 0.24s;
+}
+
+/* 顶部细线强调 */
+.jl-link-confirm::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary) 35%, var(--primary) 65%, transparent);
+    opacity: 0.85;
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 0.55s var(--jl-confirm-ease) 0.06s;
+}
+
+.jl-link-confirm-overlay.is-open .jl-link-confirm::before {
+    transform: scaleX(1);
+}
+
+.jl-link-confirm__inner {
+    padding: 26px 26px 22px;
+}
+
+.jl-link-confirm__close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #a3aab6;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.jl-link-confirm__close:hover {
+    color: var(--jl-confirm-muted);
+    background: rgba(15, 18, 30, 0.05);
+}
+
+.jl-link-confirm__close:active {
+    transform: scale(0.94);
+}
+
+/* 头部文案 */
+.jl-link-confirm__head {
+    margin-bottom: 20px;
+    padding-right: 28px;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.jl-link-confirm-overlay.is-open .jl-link-confirm__head {
+    animation: jlConfirmFadeUp 0.52s var(--jl-confirm-ease) 0.05s forwards;
+}
+
+.jl-link-confirm-overlay.is-closing .jl-link-confirm__head {
+    animation: none;
+    opacity: 0;
+}
+
+.jl-link-confirm__eyebrow {
+    margin: 0 0 4px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    line-height: 1.2;
+}
+
+.jl-link-confirm__company {
+    margin: 0;
+    font-size: 1.375rem;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 1.25;
+    color: var(--jl-confirm-ink);
+    word-break: break-word;
+}
+
+.jl-link-confirm__subtitle {
+    margin: 6px 0 0;
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.45;
+    color: var(--jl-confirm-muted);
+    letter-spacing: -0.01em;
+}
+
+/* 链接区 */
+.jl-link-confirm__link-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 11px 13px;
+    border-radius: 11px;
+    background: #f8f9fb;
+    border: 1px solid var(--jl-confirm-hairline);
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+.jl-link-confirm-overlay.is-open .jl-link-confirm__link-card {
+    animation: jlConfirmFadeUp 0.52s var(--jl-confirm-ease) 0.1s forwards;
+}
+
+.jl-link-confirm-overlay.is-closing .jl-link-confirm__link-card {
+    animation: none;
+    opacity: 0;
+}
+
+.jl-link-confirm__link-icon {
+    flex-shrink: 0;
+    color: #9ca3af;
+    opacity: 0.9;
+}
+
+.jl-link-confirm__url {
+    margin: 0;
+    min-width: 0;
+    font-size: 0.8125rem;
+    font-weight: 450;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    color: #4b5563;
+    word-break: break-all;
+    font-variant-numeric: tabular-nums;
+}
+
+.jl-link-confirm__hint {
+    margin: 0 0 22px;
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #a3aab6;
+    letter-spacing: 0.01em;
+    opacity: 0;
+    transform: translateY(6px);
+}
+
+.jl-link-confirm-overlay.is-open .jl-link-confirm__hint {
+    animation: jlConfirmFadeUp 0.52s var(--jl-confirm-ease) 0.14s forwards;
+}
+
+.jl-link-confirm-overlay.is-closing .jl-link-confirm__hint {
+    animation: none;
+    opacity: 0;
+}
+
+/* 按钮 */
+.jl-link-confirm__actions {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+.jl-link-confirm-overlay.is-open .jl-link-confirm__actions {
+    animation: jlConfirmFadeUp 0.52s var(--jl-confirm-ease) 0.18s forwards;
+}
+
+.jl-link-confirm-overlay.is-closing .jl-link-confirm__actions {
+    animation: none;
+    opacity: 0;
+}
+
+.jl-link-confirm__cancel,
+.jl-link-confirm__go {
+    height: 44px;
+    border-radius: 11px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    cursor: pointer;
+    border: none;
+    transition:
+        transform 0.22s var(--jl-confirm-ease),
+        background 0.22s ease,
+        box-shadow 0.22s ease,
+        color 0.22s ease;
+}
+
+.jl-link-confirm__cancel {
+    background: #fff;
+    color: var(--jl-confirm-muted);
+    border: 1px solid var(--jl-confirm-hairline);
+    box-shadow: 0 1px 2px rgba(15, 18, 30, 0.03);
+}
+
+.jl-link-confirm__cancel:hover {
+    color: var(--jl-confirm-ink);
+    background: #fafbfc;
+    border-color: rgba(15, 18, 30, 0.12);
+}
+
+.jl-link-confirm__go {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #fff;
+    background: var(--jl-confirm-ink);
+    box-shadow: 0 4px 14px rgba(15, 18, 30, 0.18);
+}
+
+.jl-link-confirm__go:hover {
+    background: #252a3d;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(15, 18, 30, 0.2);
+}
+
+.jl-link-confirm__go:active {
+    transform: translateY(0) scale(0.985);
+}
+
+.jl-link-confirm__go svg {
+    transition: transform 0.28s var(--jl-confirm-ease);
+}
+
+.jl-link-confirm__go:hover svg {
+    transform: translateX(2px);
+}
+
+@keyframes jlConfirmFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .jl-link-confirm-overlay,
+    .jl-link-confirm,
+    .jl-link-confirm::before,
+    .jl-link-confirm__head,
+    .jl-link-confirm__link-card,
+    .jl-link-confirm__hint,
+    .jl-link-confirm__actions {
+        animation: none !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .jl-link-confirm-overlay.is-open .jl-link-confirm__head,
+    .jl-link-confirm-overlay.is-open .jl-link-confirm__link-card,
+    .jl-link-confirm-overlay.is-open .jl-link-confirm__hint,
+    .jl-link-confirm-overlay.is-open .jl-link-confirm__actions {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (max-width: 400px) {
+    .jl-link-confirm__inner {
+        padding: 22px 20px 18px;
+    }
+
+    .jl-link-confirm__actions {
+        grid-template-columns: 1fr;
+    }
+
+    .jl-link-confirm__go {
+        order: -1;
+    }
+}
+
+/* 全局删除/操作确认（#confirmOverlay）：略窄、略高，避免扁宽 */
+#confirmOverlay .jl-link-confirm {
+    width: min(100%, 340px);
+    min-height: 248px;
+}
+
+#confirmOverlay .jl-link-confirm__inner {
+    display: flex;
+    flex-direction: column;
+    min-height: 248px;
+    padding: 30px 24px 26px;
+}
+
+#confirmOverlay .jl-link-confirm__head {
+    margin-bottom: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8px 0 20px;
+}
+
+#confirmOverlay .jl-link-confirm__company {
+    font-size: 1.25rem;
+    line-height: 1.35;
+}
+
+#confirmOverlay .jl-link-confirm__subtitle {
+    margin-top: 10px;
+    line-height: 1.55;
+}
+
+#confirmOverlay .jl-link-confirm__hint {
+    margin-bottom: 24px;
+}
+
+#confirmOverlay .jl-link-confirm__actions {
+    margin-top: auto;
+}

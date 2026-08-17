@@ -1,0 +1,206 @@
+/* ================================================================
+   OfferFlow — 主题（12 套；顺序与 JS 一致，默认「晴空薄荷」列于首位）
+   晴空薄荷、柠光金、普鲁士蓝、马尔斯绿、晨湾缎、春露绿、晴屿蓝、沧浪青、
+   春玫、糖果粉、汽水橙、泡泡蓝
+   通过 <html data-theme="..."> 覆盖 design-system.css 中的主色
+   ================================================================ */
+
+/* 晴空薄荷（默认） */
+html[data-theme="sky-mint"] {
+    --primary: #52C5BE;
+    --primary-hover: #40B5AE;
+    --primary-light: #E7F8F6;
+    --primary-active: #2E9FA8;
+    --accent: #2E9FA8;
+    --accent-light: #D5F3FA;
+    --bg: #FCFCFD;
+}
+
+/* 柠光金（id 沿用 schonbrunn，以免本地存储失效） */
+html[data-theme="schonbrunn"] {
+    --primary: #F5C518;
+    --primary-hover: #E0B010;
+    --primary-light: #FFF9E6;
+    --primary-active: #C89808;
+    --accent: #FFD84A;
+    --accent-light: #FFFDF5;
+    --bg: #FCFCFD;
+}
+
+html[data-theme="prussian"] {
+    --primary: #003152;
+    --primary-hover: #002640;
+    --primary-light: #E6EEF3;
+    --primary-active: #001F33;
+    --accent: #38BDF8;
+    --accent-light: #E0F2FE;
+    --bg: #FCFCFD;
+}
+
+html[data-theme="mars-green"] {
+    --primary: #01847F;
+    --primary-hover: #016B67;
+    --primary-light: #E6F7F6;
+    --primary-active: #015550;
+    --accent: #14B8A6;
+    --accent-light: #CCFBF1;
+    --bg: #FCFCFD;
+}
+
+/* ── 晨湾缎：薄荷→天青→浅蓝，同系清新渐变（多色但克制） ── */
+html[data-theme="morning-bay"] {
+    --primary: #52B8E0;
+    --primary-hover: #45A6CC;
+    --primary-light: #EBF7FC;
+    --primary-active: #358FB8;
+    --accent: #6AD4BE;
+    --accent-light: #E9FAF6;
+    --bg: #FCFCFD;
+    --morning-bay-grad: linear-gradient(135deg, #6AD4BE 0%, #52C8E8 32%, #5AABF0 68%, #8FAEF5 100%);
+    --morning-bay-grad-hover: linear-gradient(135deg, #7CE0CA 0%, #64D4F2 30%, #6BB8F8 66%, #A3BCFA 100%);
+}
+
+html[data-theme="morning-bay"] .btn-primary {
+    background: var(--morning-bay-grad);
+    border-color: transparent;
+    box-shadow: 0 2px 14px rgba(82, 184, 224, 0.28);
+}
+html[data-theme="morning-bay"] .btn-primary:hover {
+    background: var(--morning-bay-grad-hover);
+    border-color: transparent;
+    box-shadow: 0 4px 18px rgba(82, 184, 224, 0.34);
+}
+html[data-theme="morning-bay"] .fab {
+    background: var(--morning-bay-grad);
+}
+html[data-theme="morning-bay"] .fab:hover {
+    background: var(--morning-bay-grad-hover);
+}
+html[data-theme="morning-bay"] .sidebar-logo-icon,
+html[data-theme="morning-bay"] .user-avatar,
+html[data-theme="morning-bay"] .settings-profile-avatar,
+html[data-theme="morning-bay"] .lounge-page .settings-profile-avatar,
+html[data-theme="morning-bay"] .auth-logo-icon {
+    background: var(--morning-bay-grad);
+}
+html[data-theme="morning-bay"] .filter-tab.active,
+html[data-theme="morning-bay"] .dashboard-filter-btn.active {
+    background: var(--morning-bay-grad);
+    border-color: transparent;
+    box-shadow: 0 1px 8px rgba(82, 184, 224, 0.26);
+}
+html[data-theme="morning-bay"] .cal-day.selected {
+    background: var(--morning-bay-grad);
+}
+html[data-theme="morning-bay"] .cal-today-btn:hover {
+    background: var(--morning-bay-grad);
+    border-color: transparent;
+}
+html[data-theme="morning-bay"] .nav-badge {
+    background: var(--morning-bay-grad);
+}
+html[data-theme="morning-bay"] .stat-card::before {
+    background: linear-gradient(90deg, #6AD4BE, #52C8E8 42%, #8FAEF5);
+}
+html[data-theme="morning-bay"] .pin-marker {
+    background: var(--morning-bay-grad);
+}
+
+/* ── 春露绿：浅翡冷绿，通透不闷 ── */
+html[data-theme="spring-dew"] {
+    --primary: #4FB89E;
+    --primary-hover: #44A58D;
+    --primary-light: #EAF7F3;
+    --primary-active: #358F78;
+    --accent: #72D4BC;
+    --accent-light: #F2FBF8;
+    --bg: #FCFCFD;
+}
+
+/* ── 晴屿蓝：浅天蓝，轻盈明亮 ── */
+html[data-theme="island-air"] {
+    --primary: #56ADD4;
+    --primary-hover: #489BC0;
+    --primary-light: #ECF6FB;
+    --primary-active: #3A86AA;
+    --accent: #82CAEA;
+    --accent-light: #F3FAFE;
+    --bg: #FCFCFD;
+}
+
+/* ── 沧浪青：深沧蓝，清朗专业 ── */
+html[data-theme="cerulean-ink"] {
+    --primary: #2E6B8A;
+    --primary-hover: #255A73;
+    --primary-light: #E8F2F7;
+    --primary-active: #1C4959;
+    --accent: #4A93B5;
+    --accent-light: #EDF6FA;
+    --bg: #FCFCFD;
+}
+
+/* ── 春玫：#E7979C 柔玫粉（纯色） ── */
+html[data-theme="blossom-rose"] {
+    --primary: #E7979C;
+    --primary-hover: #D8888C;
+    --primary-light: #FAF0F1;
+    --primary-active: #C8787C;
+    --accent: #F0A8AC;
+    --accent-light: #FDF6F7;
+    --bg: #FCFCFD;
+}
+
+/* ── 糖果粉：卡通糖果粉，明快弹跃（纯色 · 卡通） ── */
+html[data-theme="candy-pink"] {
+    --primary: #F0558C;
+    --primary-hover: #E04880;
+    --primary-light: #FFF0F5;
+    --primary-active: #C83870;
+    --accent: #FF78A8;
+    --accent-light: #FFF5F8;
+    --bg: #FCFCFD;
+}
+
+/* ── 汽水橙：卡通汽水橙，活力饱满（纯色 · 卡通） ── */
+html[data-theme="soda-pop"] {
+    --primary: #FF8A4C;
+    --primary-hover: #F07A3C;
+    --primary-light: #FFF3EB;
+    --primary-active: #D86830;
+    --accent: #FFAA70;
+    --accent-light: #FFF8F2;
+    --bg: #FCFCFD;
+}
+
+/* ── 泡泡蓝：卡通泡泡蓝，清爽透亮（纯色 · 卡通） ── */
+html[data-theme="bubble-blue"] {
+    --primary: #45BFFF;
+    --primary-hover: #38B0F0;
+    --primary-light: #ECF8FF;
+    --primary-active: #2898D8;
+    --accent: #70D0FF;
+    --accent-light: #F0FAFF;
+    --bg: #FCFCFD;
+}
+
+/* 全部主题：主色块上的文案与图标统一白字、加粗（含 hover，避免个别主题单独写成黑字） */
+html[data-theme] .btn-primary,
+html[data-theme] .btn-primary svg,
+html[data-theme] .sidebar-logo-icon,
+html[data-theme] .user-avatar,
+html[data-theme] .settings-profile-avatar,
+html[data-theme] .lounge-page .settings-profile-avatar,
+html[data-theme] .fab,
+html[data-theme] .fab svg,
+html[data-theme] .auth-logo-icon {
+    color: #FFFFFF;
+    font-weight: 700;
+}
+html[data-theme] .sidebar-logo-icon,
+html[data-theme] .auth-logo-icon {
+    font-weight: 800;
+}
+html[data-theme] .btn-primary:hover,
+html[data-theme] .btn-primary:hover svg {
+    color: #FFFFFF;
+}

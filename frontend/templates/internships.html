@@ -1,0 +1,1429 @@
+{% extends "base.html" %}
+
+{% block title %}实习投递 - OfferFlow{% endblock %}
+{% block page_title %}实习投递{% endblock %}
+{% block active_page %}internships{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-primary btn-sm" onclick="openInternshipForm()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    投递实习
+</button>
+<button class="btn btn-secondary btn-sm" onclick="openCalendarModal()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    日历视图
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="batch-page-root" id="batchPageRoot" data-batch-page="intern">
+<!-- Toolbar -->
+<div class="toolbar">
+    <div class="search-box">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="搜索公司或岗位..." oninput="onSearchInput(this)">
+        <div class="search-debounce" id="searchDebounce"><div class="search-spinner"></div></div>
+    </div>
+    <div class="filter-tabs">
+        <button class="filter-tab" data-filter="all" onclick="setFilter('all')">全部</button>
+        <button class="filter-tab" data-filter="pending" onclick="setFilter('pending')">未投递</button>
+        <button class="filter-tab" data-filter="sent" onclick="setFilter('sent')">已投递</button>
+        <button class="filter-tab" data-filter="offered" onclick="setFilter('offered')">Offer</button>
+    </div>
+    <script>
+    (function () {
+        var f = localStorage.getItem('intern_filter') || 'all';
+        if (f === 'replied') f = 'all';
+        document.querySelectorAll('.filter-tab').forEach(function (t) {
+            t.classList.toggle('active', t.dataset.filter === f);
+        });
+    })();
+    </script>
+    <div class="adv-filters adv-filters--inline">
+        <div class="adv-filter-item">
+            <label for="priorityFilter">优先级</label>
+            <select id="priorityFilter" class="adv-filter-select" onchange="setPriorityFilter(this.value)">
+                <option value="all">全部优先级</option>
+                <option value="hang">夯</option>
+                <option value="top">顶级</option>
+                <option value="elite">人上人</option>
+                <option value="npc">NPC</option>
+                <option value="done">拉完了</option>
+            </select>
+        </div>
+        <div class="adv-filter-item">
+            <label for="interviewFilter">面试时间</label>
+            <select id="interviewFilter" class="adv-filter-select" onchange="setInterviewFilter(this.value)">
+                <option value="all">全部</option>
+                <option value="has">仅有面试时间</option>
+                <option value="none">仅无面试时间</option>
+            </select>
+        </div>
+        <div class="adv-filter-item">
+            <label for="sortField">排序字段</label>
+            <select id="sortField" class="adv-filter-select" onchange="setSortField(this.value)">
+                <option value="default">默认</option>
+                <option value="status">状态</option>
+                <option value="priority">优先级</option>
+                <option value="interview">面试时间</option>
+            </select>
+        </div>
+        <div class="adv-filter-item">
+            <label for="sortOrder">排序方向</label>
+            <select id="sortOrder" class="adv-filter-select" onchange="setSortOrder(this.value)">
+                <option value="asc">正序</option>
+                <option value="desc">倒序</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- 飞书式底部批量操作栏 -->
+<div class="batch-toolbar batch-toolbar-feishu" id="batchToolbar" aria-live="polite">
+    <div class="batch-toolbar-left">
+        <span class="batch-toolbar-count">已选 <strong id="batchCount">0</strong> 条</span>
+        <span class="batch-toolbar-meta" id="batchMeta"></span>
+    </div>
+    <div class="batch-toolbar-trailing">
+        <div class="batch-toolbar-actions batch-toolbar-actions--uniform">
+            <button type="button" class="btn-link-sm" onclick="selectAllOnPage()">全部选择</button>
+            <button type="button" class="btn-link-sm" onclick="clearPageSelection()">取消选择</button>
+            <button type="button" class="btn-link-sm" onclick="batchPinRows(1)">置顶</button>
+            <button type="button" class="btn-link-sm" onclick="batchPinRows(0)">取消置顶</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="batchDelete()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:4px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                删除
+            </button>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="exitBatchMode()">完成</button>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card card--table-overflow">
+    <div class="batch-table-accent" aria-hidden="true">
+        <span class="batch-table-accent__track"></span>
+        <span class="batch-table-accent__beam batch-table-accent__beam--l" aria-hidden="true"></span>
+        <span class="batch-table-accent__beam batch-table-accent__beam--r" aria-hidden="true"></span>
+        <span class="batch-table-accent__fill"></span>
+    </div>
+    <div class="card-body data-table-wrapper">
+        <div id="tableContent"></div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/table-row-drag.css?v=20260516drag2">
+<style>
+.batch-page-root .adv-filters {
+    margin: 0;
+    padding: 5px 8px;
+    border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+    background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+    border-radius: 11px;
+    box-shadow: 0 6px 18px -18px rgba(15, 23, 42, 0.4);
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 2px;
+}
+.batch-page-root .adv-filters.adv-filters--inline {
+    justify-content: flex-end;
+    margin-left: auto;
+    position: relative;
+}
+.batch-page-root .adv-filters.adv-filters--inline::before {
+    content: "";
+    position: absolute;
+    left: -20px;
+    top: 50%;
+    width: 1px;
+    height: 24px;
+    transform: translateY(-50%);
+    background: color-mix(in srgb, var(--border) 72%, transparent);
+}
+.batch-page-root .adv-filter-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 6px;
+}
+.batch-page-root .adv-filter-item + .adv-filter-item {
+    border-left: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+.batch-page-root .adv-filter-item label {
+    margin: 0;
+    font-size: 0.7rem;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+.batch-page-root .adv-filter-select {
+    height: 30px;
+    min-width: 96px;
+    max-width: 124px;
+    padding: 0 26px 0 9px;
+    border-radius: 7px;
+    border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+    background-color: var(--surface);
+    color: var(--text);
+    font-size: 0.74rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.4'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 9px center;
+    transition: border-color .18s var(--ease), box-shadow .18s var(--ease), transform .18s var(--ease);
+}
+.batch-page-root .adv-filter-select:hover {
+    border-color: color-mix(in srgb, var(--primary) 34%, var(--border));
+}
+.batch-page-root .adv-filter-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+@media (max-width: 980px) {
+    .batch-page-root .toolbar { align-items: stretch; }
+    .batch-page-root .adv-filters {
+        flex-wrap: wrap;
+        margin-left: 0;
+        margin-top: 8px;
+        justify-content: flex-start;
+        gap: 6px;
+    }
+    .batch-page-root .adv-filter-item + .adv-filter-item {
+        border-left: none;
+    }
+    .batch-page-root .adv-filters.adv-filters--inline::before { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script data-turbo-eval="true">
+
+var BATCH_PAGE_PREFIX = 'intern';
+var __batchPageState = OFBatchState.read(BATCH_PAGE_PREFIX);
+
+function savePageState() {
+    localStorage.setItem('intern_filter', currentFilter);
+    localStorage.setItem('intern_priority_filter', currentPriorityFilter);
+    localStorage.setItem('intern_interview_filter', currentInterviewFilter);
+    localStorage.setItem('intern_sort_field', currentSortField);
+    localStorage.setItem('intern_sort_order', currentSortOrder);
+    var searchEl = document.getElementById('searchInput');
+    if (searchEl) localStorage.setItem('intern_search', searchEl.value);
+}
+
+function restorePageState() {
+    __batchPageState = OFBatchState.read(BATCH_PAGE_PREFIX);
+    currentFilter = __batchPageState.filter;
+    currentPriorityFilter = __batchPageState.priority;
+    currentInterviewFilter = __batchPageState.interview;
+    currentSortField = __batchPageState.sortField;
+    currentSortOrder = __batchPageState.sortOrder;
+    OFBatchState.apply(document, BATCH_PAGE_PREFIX, __batchPageState);
+    loadData({ soft: true });
+}
+
+function initInternshipsPage() {
+    var root = document.querySelector('[data-batch-page="intern"]');
+    if (!root) return;
+    if (root.getAttribute('data-of-booted') === '1') return;
+    root.setAttribute('data-of-booted', '1');
+    bindUndoRedoHotkeys();
+    restorePageState();
+}
+
+window.__ofBootIntern = initInternshipsPage;
+
+var currentFilter = __batchPageState.filter;
+var currentPriorityFilter = __batchPageState.priority;
+var currentInterviewFilter = __batchPageState.interview;
+var currentSortField = __batchPageState.sortField;
+var currentSortOrder = __batchPageState.sortOrder;
+var searchTimeout = null;
+var allData = [];
+var selectedIds = new Set();
+var listTotal = 0;
+var lastAnchorIndex = null;
+var reorderSaveTimer = null;
+var changeUndoStack = [];
+var changeRedoStack = [];
+var applyingHistoryPatch = false;
+var HISTORY_MAX = 80;
+var pendingPatchCount = 0;
+var deferUndoAfterSave = false;
+
+function historyEditableKeys() {
+    return [
+        'company', 'position', 'link', 'priority', 'status',
+        'applied_at', 'salary', 'remarks', 'interview_rounds'
+    ];
+}
+
+function historyRowSnapshot(row) {
+    var snap = {};
+    if (!row) return snap;
+    historyEditableKeys().forEach(function (k) {
+        snap[k] = row[k] == null ? null : row[k];
+    });
+    return snap;
+}
+
+function historyDiffPatch(fromSnap, toSnap) {
+    var patch = {};
+    historyEditableKeys().forEach(function (k) {
+        var a = fromSnap && Object.prototype.hasOwnProperty.call(fromSnap, k) ? fromSnap[k] : null;
+        var b = toSnap && Object.prototype.hasOwnProperty.call(toSnap, k) ? toSnap[k] : null;
+        if ((a == null ? null : a) !== (b == null ? null : b)) patch[k] = b == null ? null : b;
+    });
+    return patch;
+}
+
+function historyPush(entry) {
+    changeUndoStack.push(entry);
+    if (changeUndoStack.length > HISTORY_MAX) changeUndoStack.shift();
+    changeRedoStack = [];
+}
+
+function shouldIgnoreUndoHotkeyTarget(target) {
+    if (!target || !target.closest) return false;
+    return !!target.closest('input, textarea, [contenteditable="true"]');
+}
+
+function applyRowPatch(id, patch, opts) {
+    opts = opts || {};
+    var current = allData.find(function (x) { return x.id === id; }) || null;
+    var before = historyRowSnapshot(current);
+    pendingPatchCount += 1;
+    return api('/api/internships/' + id, { method: 'PUT', body: patch }).then(function (row) {
+        mergeInternshipServerRow(row);
+        var merged = allData.find(function (x) { return x.id === id; }) || row;
+        var after = historyRowSnapshot(merged);
+        if (!opts.skipHistory && !applyingHistoryPatch) {
+            var fwdPatch = historyDiffPatch(before, after);
+            if (Object.keys(fwdPatch).length) {
+                historyPush({ id: id, before: before, after: after, label: opts.label || '修改' });
+            }
+        }
+        if (!opts.skipHistory && !applyingHistoryPatch && deferUndoAfterSave && changeUndoStack.length) {
+            deferUndoAfterSave = false;
+            setTimeout(function () { undoLastChange(); }, 0);
+        }
+        toast(opts.successToast || '已更新');
+        refreshInternshipListSoft();
+        return row;
+    }).catch(function (e) {
+        toast(e.message, 'error');
+        refreshInternshipListSoft();
+        throw e;
+    }).finally(function () {
+        pendingPatchCount = Math.max(0, pendingPatchCount - 1);
+    });
+}
+
+function undoLastChange() {
+    if (!changeUndoStack.length) {
+        if (pendingPatchCount > 0) deferUndoAfterSave = true;
+        return;
+    }
+    var entry = changeUndoStack.pop();
+    var current = allData.find(function (x) { return x.id === entry.id; }) || null;
+    var nowSnap = historyRowSnapshot(current);
+    var revertPatch = historyDiffPatch(nowSnap, entry.before);
+    if (!Object.keys(revertPatch).length) {
+        changeRedoStack.push(entry);
+        toast('无需撤回', 'warning');
+        return;
+    }
+    applyingHistoryPatch = true;
+    applyRowPatch(entry.id, revertPatch, { skipHistory: true, successToast: '已撤回：' + entry.label }).then(function () {
+        changeRedoStack.push(entry);
+    }).finally(function () {
+        applyingHistoryPatch = false;
+    });
+}
+
+function redoLastChange() {
+    if (!changeRedoStack.length) { toast('没有可重做的操作', 'warning'); return; }
+    var entry = changeRedoStack.pop();
+    var current = allData.find(function (x) { return x.id === entry.id; }) || null;
+    var nowSnap = historyRowSnapshot(current);
+    var redoPatch = historyDiffPatch(nowSnap, entry.after);
+    if (!Object.keys(redoPatch).length) {
+        changeUndoStack.push(entry);
+        toast('无需重做', 'warning');
+        return;
+    }
+    applyingHistoryPatch = true;
+    applyRowPatch(entry.id, redoPatch, { skipHistory: true, successToast: '已重做：' + entry.label }).then(function () {
+        changeUndoStack.push(entry);
+    }).finally(function () {
+        applyingHistoryPatch = false;
+    });
+}
+
+function bindUndoRedoHotkeys() {
+    if (window.__offerflowInternUndoBound) return;
+    window.__offerflowInternUndoBound = true;
+    document.addEventListener('keydown', function (e) {
+        if (!document.getElementById('tableContent')) return;
+        if (shouldIgnoreUndoHotkeyTarget(e.target)) return;
+        var key = String(e.key || '').toLowerCase();
+        var mod = e.ctrlKey || e.metaKey;
+        if (!mod) return;
+        if (key === 'z' && !e.shiftKey) {
+            e.preventDefault();
+            undoLastChange();
+            return;
+        }
+        if (key === 'y' || (key === 'z' && e.shiftKey)) {
+            e.preventDefault();
+            redoLastChange();
+        }
+    });
+}
+
+function persistInternshipOrder(ids) {
+    clearTimeout(reorderSaveTimer);
+    reorderSaveTimer = setTimeout(function () {
+        api('/api/internships/reorder', { method: 'POST', body: { ids: ids } })
+            .then(function () {
+                var map = {};
+                allData.forEach(function (x) { map[x.id] = x; });
+                allData = ids.map(function (id) { return map[id]; }).filter(Boolean);
+                ids.forEach(function (id, i) {
+                    if (map[id]) map[id].display_order = ids.length - i;
+                });
+            })
+            .catch(function (e) {
+                toast(e.message || '保存顺序失败', 'error');
+                loadData();
+            });
+    }, 300);
+}
+
+function onSearchInput(el) {
+    var db = document.getElementById('searchDebounce');
+    if (db) db.classList.add('active');
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+        if (db) db.classList.remove('active');
+        loadData();
+    }, 400);
+}
+
+function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.filter === f); });
+    loadData();
+    savePageState();
+}
+
+function setPriorityFilter(v) {
+    currentPriorityFilter = v || 'all';
+    loadData({ soft: true });
+    savePageState();
+}
+
+function setInterviewFilter(v) {
+    currentInterviewFilter = v || 'all';
+    loadData({ soft: true });
+    savePageState();
+}
+
+function setSortField(v) {
+    currentSortField = v || 'default';
+    loadData({ soft: true });
+    savePageState();
+}
+
+function setSortOrder(v) {
+    currentSortOrder = v === 'asc' ? 'asc' : 'desc';
+    loadData({ soft: true });
+    savePageState();
+}
+
+function showSkeleton() {
+    var container = document.getElementById('tableContent');
+    var rows = '';
+    for (var i = 0; i < 6; i++) {
+        rows += '<tr><td style="text-align:center"><div class="skeleton" style="width:14px;height:14px;border-radius:3px;margin:0 auto"></div></td>' +
+            '<td style="text-align:center"><div class="skeleton skeleton-text-sm" style="width:16px;margin:0 auto"></div></td>' +
+            '<td><div style="display:flex;align-items:center;gap:10px;"><div class="skeleton skeleton-circle"></div><div><div class="skeleton skeleton-block" style="width:120px;margin-bottom:4px;"></div><div class="skeleton skeleton-text-sm" style="width:80px;"></div></div></div></td>' +
+            '<td><div class="skeleton skeleton-text" style="width:80px;"></div></td>' +
+            '<td><div class="skeleton" style="width:70px;height:22px;border-radius:6px;"></div></td>' +
+            '<td><div class="skeleton skeleton-text" style="width:90px;"></div></td>' +
+            '<td><div class="skeleton" style="width:160px;height:24px;border-radius:6px;"></div></td>' +
+            '<td><div class="skeleton skeleton-text" style="width:50px;"></div></td>' +
+            '<td><div class="skeleton" style="width:60px;height:22px;border-radius:6px;"></div></td>' +
+            '<td><div class="skeleton skeleton-text" style="width:50px;"></div></td>' +
+            '<td></td></tr>';
+    }
+    container.innerHTML = '<table class="data-table"><thead><tr><th></th><th style="min-width:40px">序号</th><th style="min-width:200px">公司 / 岗位</th>' + (typeof deliveryJobLinkThHtml === 'function' ? deliveryJobLinkThHtml() : '<th class="col-job-link">岗位链接</th>') + '<th class="col-status">状态</th><th style="min-width:110px">投递时间</th><th style="min-width:180px">面试时间</th><th style="min-width:80px">倒计时</th><th class="col-priority">优先级</th><th style="min-width:80px">薪资</th><th style="min-width:40px"></th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+/** 状态正序：拿到 offer → 已投递 → 未投递 → 已被拒 */
+function statusRank(v) {
+    var s = (v === 'replied' ? 'sent' : (v || 'pending'));
+    var map = {
+        offered: 0,
+        sent: 1, written: 1, interview: 1, interviewing: 1, hr: 1,
+        pending: 2,
+        rejected: 3
+    };
+    return Object.prototype.hasOwnProperty.call(map, s) ? map[s] : 99;
+}
+
+function priorityRank(v) {
+    var map = { hang: 0, top: 1, elite: 2, npc: 3, done: 4 };
+    return Object.prototype.hasOwnProperty.call(map, v || 'hang') ? map[v || 'hang'] : 99;
+}
+
+function parseRoundDateMs(timeStr) {
+    if (!timeStr) return null;
+    var d = String(timeStr).indexOf('T') >= 0 ? new Date(timeStr) : new Date(String(timeStr).replace(' ', 'T'));
+    var n = d.getTime();
+    return isNaN(n) ? null : n;
+}
+
+function nearestInterviewTs(roundsJson) {
+    var rounds = parseRounds(roundsJson);
+    var ts = null;
+    for (var i = 0; i < rounds.length; i++) {
+        var n = parseRoundDateMs(rounds[i] && rounds[i].time);
+        if (n !== null && (ts === null || n < ts)) ts = n;
+    }
+    return ts;
+}
+
+function upcomingInterviewTs(roundsJson) {
+    var rounds = parseRounds(roundsJson);
+    var now = Date.now();
+    var ts = null;
+    for (var i = 0; i < rounds.length; i++) {
+        var n = parseRoundDateMs(rounds[i] && rounds[i].time);
+        if (n === null || n < now) continue;
+        if (ts === null || n < ts) ts = n;
+    }
+    return ts;
+}
+
+function latestPastInterviewTs(roundsJson) {
+    var rounds = parseRounds(roundsJson);
+    var now = Date.now();
+    var ts = null;
+    for (var i = 0; i < rounds.length; i++) {
+        var n = parseRoundDateMs(rounds[i] && rounds[i].time);
+        if (n === null || n >= now) continue;
+        if (ts === null || n > ts) ts = n;
+    }
+    return ts;
+}
+
+function hasAnyInterviewTime(roundsJson) {
+    var rounds = parseRounds(roundsJson);
+    for (var i = 0; i < rounds.length; i++) {
+        if (parseRoundDateMs(rounds[i] && rounds[i].time) !== null) return true;
+    }
+    return false;
+}
+
+function rowStatusNorm(item) {
+    return item.status === 'replied' ? 'sent' : (item.status || 'pending');
+}
+
+/** 面试时间正序：未开始(倒计时近→远) → 已面完 → 已投递无面试时间 → 未投递 */
+function compareInterviewSort(a, b) {
+    var upA = upcomingInterviewTs(a.interview_rounds);
+    var upB = upcomingInterviewTs(b.interview_rounds);
+    if (upA !== null || upB !== null) {
+        if (upA === null) return 1;
+        if (upB === null) return -1;
+        if (upA !== upB) return upA - upB;
+        return (b.display_order || 0) - (a.display_order || 0);
+    }
+    var pastA = hasAnyInterviewTime(a.interview_rounds);
+    var pastB = hasAnyInterviewTime(b.interview_rounds);
+    if (pastA || pastB) {
+        if (!pastA) return 1;
+        if (!pastB) return -1;
+        var lpA = latestPastInterviewTs(a.interview_rounds) || 0;
+        var lpB = latestPastInterviewTs(b.interview_rounds) || 0;
+        if (lpA !== lpB) return lpB - lpA;
+        return (b.display_order || 0) - (a.display_order || 0);
+    }
+    var pendA = rowStatusNorm(a) === 'pending';
+    var pendB = rowStatusNorm(b) === 'pending';
+    if (pendA !== pendB) return pendA ? 1 : -1;
+    if (!pendA) {
+        var apA = parseRoundDateMs(a.applied_at) || 0;
+        var apB = parseRoundDateMs(b.applied_at) || 0;
+        if (apA !== apB) return apB - apA;
+    }
+    return (b.display_order || 0) - (a.display_order || 0);
+}
+
+function applyAdvancedFilters(items) {
+    return items.filter(function (x) {
+        if (currentPriorityFilter !== 'all' && (x.priority || 'hang') !== currentPriorityFilter) return false;
+        var ts = nearestInterviewTs(x.interview_rounds);
+        if (currentInterviewFilter === 'has' && ts === null) return false;
+        if (currentInterviewFilter === 'none' && ts !== null) return false;
+        return true;
+    });
+}
+
+function sortInternshipsInPlace() {
+    allData.sort(function (a, b) {
+        var pinCmp = (b.pinned || 0) - (a.pinned || 0);
+        if (pinCmp) return pinCmp;
+        var cmp = 0;
+        if (currentSortField === 'status') {
+            cmp = statusRank(a.status) - statusRank(b.status);
+        } else if (currentSortField === 'priority') {
+            cmp = priorityRank(a.priority) - priorityRank(b.priority);
+        } else if (currentSortField === 'interview') {
+            cmp = compareInterviewSort(a, b);
+        }
+        if (cmp !== 0) return currentSortOrder === 'asc' ? cmp : -cmp;
+        return (b.display_order || 0) - (a.display_order || 0);
+    });
+}
+
+/** 将 PUT/POST pin 等接口返回的一行合并进 allData（避免整表骨架刷新） */
+function mergeInternshipServerRow(row) {
+    if (!row || !row.id) return;
+    var item = allData.find(function (x) { return x.id === row.id; });
+    if (!item) return;
+    Object.keys(row).forEach(function (k) {
+        item[k] = row[k];
+    });
+}
+
+/** 就地重绘列表（无骨架屏、无行动画），用于置顶/改状态/改字段等 */
+function refreshInternshipListSoft() {
+    lastAnchorIndex = null;
+    allData = applyAdvancedFilters(allData);
+    listTotal = allData.length;
+    sortInternshipsInPlace();
+    renderTable(allData, { skipRowAnim: true });
+    syncHeaderCheckbox();
+    syncRowCheckboxes();
+    updateBatchUI();
+    updateBatchMeta();
+    calItems = allData.map(function (it) {
+        return { id: it.id, company: it.company, position: it.position, rounds: parseRounds(it.interview_rounds) };
+    });
+    startCountdown();
+}
+
+function loadData(opts) {
+    opts = opts || {};
+    if (!opts.soft) showSkeleton();
+
+    var url = '/api/internships?page_size=200&_t=' + Date.now();
+    if (currentFilter !== 'all') url += '&status=' + encodeURIComponent(currentFilter);
+    var searchEl = document.getElementById('searchInput');
+    var q = searchEl ? searchEl.value.trim() : '';
+    if (q) url += '&search=' + encodeURIComponent(q);
+
+    api(url).then(function (d) {
+        allData = applyAdvancedFilters(d.items || []);
+        listTotal = allData.length;
+        lastAnchorIndex = null;
+        // Sort by pinned then display_order（与接口 order_by 一致）
+        sortInternshipsInPlace();
+        renderTable(allData, { skipRowAnim: !!opts.soft });
+        syncHeaderCheckbox();
+        syncRowCheckboxes();
+        updateBatchUI();
+        updateBatchMeta();
+        startCountdown();
+        // Feed calendar
+        calItems = allData.map(it => ({ id: it.id, company: it.company, position: it.position, rounds: parseRounds(it.interview_rounds) }));
+    }).catch(function (err) {
+        var tc = document.getElementById('tableContent');
+        var hint = err && err.status === 401
+            ? '加载失败，请刷新页面后重试。'
+            : escHtml(err.message || '未知错误');
+        if (tc) {
+            tc.innerHTML = '<div class="empty-state"><div class="empty-title">加载失败</div><div class="empty-desc" style="color:var(--danger)">' + hint + '</div></div>';
+        }
+    });
+}
+
+function parseRounds(json) {
+    try { return json ? JSON.parse(json) : []; } catch { return []; }
+}
+
+
+var ROUND_MODAL_MINUTES = ['00', '10', '20', '30', '40', '50'];
+
+function snapMinuteToTenStr(mmStr) {
+    var n = parseInt(String(mmStr || '0').replace(/\D/g, '') || '0', 10);
+    if (isNaN(n)) n = 0;
+    var s = Math.round(n / 10) * 10;
+    if (s >= 60) s = 50;
+    if (s < 0) s = 0;
+    return String(s).padStart(2, '0');
+}
+
+/** 填充 #rHour（0–23）、#rMin（仅 00/10/…/50 共 6 项） */
+function populateRoundModalHourMin(hourVal, minVal) {
+    var hEl = document.getElementById('rHour');
+    var mEl = document.getElementById('rMin');
+    if (!hEl || !mEl) return;
+    var h = hourVal != null && String(hourVal).length ? String(hourVal).padStart(2, '0') : '10';
+    var hi = parseInt(h, 10);
+    if (isNaN(hi) || hi < 0) h = '00';
+    else if (hi > 23) h = '23';
+    else h = String(hi).padStart(2, '0');
+    var mRaw = minVal != null && String(minVal).length ? String(minVal).padStart(2, '0') : '00';
+    var m = ROUND_MODAL_MINUTES.indexOf(mRaw) >= 0 ? mRaw : snapMinuteToTenStr(mRaw);
+    var i, v;
+    var hOpts = '';
+    for (i = 0; i < 24; i++) {
+        v = String(i).padStart(2, '0');
+        hOpts += '<option value="' + v + '"' + (v === h ? ' selected' : '') + '>' + v + '</option>';
+    }
+    hEl.innerHTML = hOpts;
+    var mOpts = '';
+    for (i = 0; i < ROUND_MODAL_MINUTES.length; i++) {
+        v = ROUND_MODAL_MINUTES[i];
+        mOpts += '<option value="' + v + '"' + (v === m ? ' selected' : '') + '>' + v + '</option>';
+    }
+    mEl.innerHTML = mOpts;
+}
+
+function formatRoundTime(timeStr) {
+    if (!timeStr) return '';
+    var parts = timeStr.split('T');
+    if (parts.length === 2) {
+        var datePart = parts[0].substring(5, 10);   // MM-DD
+        var timePart = parts[1].substring(0, 5);   // HH:MM
+        return datePart + ' ' + timePart;
+    }
+    return timeStr.substring(5, 10);               // MM-DD only
+}
+
+var COUNTDOWN_24H_MS = 24 * 60 * 60 * 1000;
+
+/** 面试轮次样式：已过期 / ≥24h 深灰（同倒计时）/ <24h 浅红 urgent */
+function roundTagClasses(timeStr) {
+    if (!timeStr) return '';
+    var now = new Date();
+    var d = timeStr.indexOf('T') >= 0 ? new Date(timeStr) : new Date(timeStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return '';
+    var diff = d - now;
+    if (diff < 0) return ' round-tag--past';
+    if (diff >= COUNTDOWN_24H_MS) return ' round-tag--warning';
+    return ' round-tag--urgent';
+}
+
+function syncRoundTagClasses(container, now) {
+    if (!container) return;
+    now = now || new Date();
+    var tags = container.querySelectorAll('.round-tag');
+    for (var j = 0; j < tags.length; j++) {
+        var tag = tags[j];
+        var timeStr = tag.getAttribute('data-round-time') || '';
+        tag.classList.remove('round-tag--urgent', 'round-tag--warning', 'round-tag--past');
+        var extra = roundTagClasses(timeStr);
+        if (extra) {
+            extra.trim().split(/\s+/).forEach(function (cls) {
+                if (cls) tag.classList.add(cls);
+            });
+        }
+    }
+}
+
+function renderRounds(id, rounds, nearestInfo) {
+    const sorted = [...rounds].sort((a, b) => {
+        if (!a.time && !b.time) return 0;
+        if (!a.time) return 1;
+        if (!b.time) return -1;
+        return new Date(a.time) - new Date(b.time);
+    });
+    let h = '<div class="rounds-container">';
+    for (let i = 0; i < sorted.length; i++) {
+        const r = sorted[i];
+        var drt = escAttr(r.time || '');
+        h += '<span class="round-tag' + roundTagClasses(r.time) + '" data-round-time="' + drt + '" onclick="editRound(\'' + id + '\',\'' + r.time + '\')" title="点击编辑">' + r.type + '<span class="round-time">' + formatRoundTime(r.time) + '</span></span>';
+    }
+    h += '<button type="button" class="round-add-btn" onclick="addRound(\'' + id + '\')" title="添加面试时间" aria-label="添加面试时间"><svg class="round-add-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>';
+    return h;
+}
+
+function renderTable(items, opts) {
+    opts = opts || {};
+    if (typeof OfferflowTableDrag !== 'undefined') OfferflowTableDrag.clearDraggingRows();
+    var tbodyAttr = opts.skipRowAnim ? '' : ' class="anim-rows"';
+    var container = document.getElementById('tableContent');
+    if (!items.length) {
+        var emptyDesc = currentFilter !== 'all'
+            ? '当前筛选下暂无记录。从岗位速递添加的默认为「未投递」，请点上方「全部」或「未投递」查看。'
+            : '还没有实习记录。可从岗位速递一键添加，或在这里手动新建。';
+        container.innerHTML =
+            '<div class="empty-state-enhanced">' +
+            '<svg class="empty-illustration" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>' +
+            '<div class="empty-title">暂无实习投递</div>' +
+            '<div class="empty-desc">' + escHtml(emptyDesc) + '</div>' +
+            '<div class="empty-actions">' +
+            '<a href="/job-links" class="btn btn-secondary btn-sm">岗位速递</a>' +
+            '<button type="button" class="btn btn-primary btn-sm" onclick="openInternshipForm()">' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 添加实习</button>' +
+            '</div></div>';
+        return;
+    }
+    var h = '<table class="data-table"><thead><tr>' +
+        '<th style="min-width:40px;text-align:center;"><input type="checkbox" class="row-checkbox" id="checkAll" onclick="event.stopPropagation(); onCheckAllClick(event, this)"></th>' +
+        '<th style="min-width:40px;text-align:center;">序号</th>' +
+        '<th style="min-width:200px">公司 / 岗位</th>' +
+        (typeof deliveryJobLinkThHtml === 'function' ? deliveryJobLinkThHtml() : '<th class="col-job-link">岗位链接</th>') +
+        '<th class="col-status">状态</th>' +
+        '<th style="min-width:110px">投递时间</th>' +
+        '<th style="min-width:180px">面试时间</th>' +
+        '<th style="min-width:80px"><span style="display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>倒计时</span></th>' +
+        '<th class="col-priority">优先级</th>' +
+        '<th style="min-width:80px">薪资</th>' +
+        '<th style="min-width:40px"></th>' +
+        '</tr></thead><tbody' + tbodyAttr + '>';
+    for (var i = 0; i < items.length; i++) {
+        var x = items[i];
+        var rowStatus = (x.status === 'replied' ? 'sent' : x.status) || 'pending';
+        var rounds = parseRounds(x.interview_rounds);
+        var nearInfo = getNearestInterview(x.interview_rounds);
+        var rowDelay = opts.skipRowAnim ? '' : ' style="animation-delay:' + Math.min(i * 14, 220) + 'ms"';
+        h += '<tr data-id="' + x.id + '" data-row-index="' + i + '"' + rowDelay + ' class="row-hover' + (x.pinned ? ' row-pinned' : '') + (selectedIds.has(x.id) ? ' row-selected' : '') + '" oncontextmenu="ctxShow(event, \'' + x.id + '\')" onclick="handleRowClickBatch(event, \'' + x.id + '\', ' + i + ')">' +
+            '<td style="text-align:center;" onclick="event.stopPropagation()"><input type="checkbox" class="row-checkbox row-check" data-id="' + x.id + '" data-row-index="' + i + '" ' + (selectedIds.has(x.id) ? 'checked' : '') + ' onclick="event.stopPropagation(); onRowCheckClick(event, this)"></td>' +
+            (typeof OfferflowTableDrag !== 'undefined' ? OfferflowTableDrag.seqCellHtml(i) : '<td class="col-num" style="text-align:center;">' + (i + 1) + '</td>') +
+            companyCellHtml(x) +
+            (typeof deliveryJobLinkCellHtml === 'function' ? deliveryJobLinkCellHtml(x) : '<td class="col-job-link">—</td>') +
+            '<td class="col-status"><select class="inline-select tone-status" onchange="inlineUpdate(\'' + x.id + '\',\'status\',this.value)">' +
+            '<option value="pending" ' + (rowStatus === 'pending' ? 'selected' : '') + '>未投递</option>' +
+            '<option value="sent" ' + (rowStatus === 'sent' ? 'selected' : '') + '>已投递</option>' +
+            '<option value="offered" ' + (rowStatus === 'offered' ? 'selected' : '') + '>拿到offer</option>' +
+            '<option value="rejected" ' + (rowStatus === 'rejected' ? 'selected' : '') + '>已被拒</option>' +
+            '</select></td>' +
+            '<td><input type="date" class="inline-date" value="' + ((rowStatus !== 'pending' && x.applied_at) ? x.applied_at.substring(0,10) : '') + '" onchange="inlineUpdate(\'' + x.id + '\',\'applied_at\',this.value)"></td>' +
+            '<td>' + renderRounds(x.id, rounds, nearInfo) + '</td>' +
+            '<td style="text-align:center;vertical-align:middle;"><div class="countdown-cell" data-id="' + x.id + '"></div></td>' +
+            '<td class="col-priority"><select class="inline-select tone-priority" onchange="inlineUpdate(\'' + x.id + '\',\'priority\',this.value)">' +
+            '<option value="hang" ' + (x.priority==='hang'?'selected':'') + '>夯</option>' +
+            '<option value="top" ' + (x.priority==='top'?'selected':'') + '>顶级</option>' +
+            '<option value="elite" ' + (x.priority==='elite'?'selected':'') + '>人上人</option>' +
+            '<option value="npc" ' + (x.priority==='npc'?'selected':'') + '>NPC</option>' +
+            '<option value="done" ' + (x.priority==='done'?'selected':'') + '>拉完了</option>' +
+            '</select></td>' +
+            '<td><span class="inline-editable" onclick="makeEditable(this,\'' + x.id + '\',\'salary\',\'' + escAttr(x.salary || '') + '\')">' + (x.salary || '—') + '</span></td>' +
+            '<td><button class="btn btn-icon btn-ghost" style="width:30px;height:30px;color:var(--text-tertiary);" onclick="deleteItem(\'' + x.id + '\')" title="删除">×</button></td>' +
+            '</tr>';
+    }
+    h += '</tbody></table>';
+    container.innerHTML = h;
+    initJobDescriptionHovers(container);
+    initTableSelectEnhancements(container);
+    if (typeof OfferflowTableDrag !== 'undefined') {
+        OfferflowTableDrag.init(container, { onReorder: persistInternshipOrder });
+    }
+}
+
+// Inline editable
+function makeEditable(el, id, field, val) {
+    if (el.querySelector('input')) return;
+    const input = document.createElement('input');
+    input.className = 'inline-input';
+    input.value = val || '';
+    input.addEventListener('blur', () => saveEdit(el, id, field, input.value));
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') saveEdit(el, id, field, input.value); if (e.key === 'Escape') { e.preventDefault(); refreshInternshipListSoft(); } });
+    el.replaceWith(input);
+    input.focus();
+}
+
+function makeEditableLink(el, id) {
+    if (el.tagName === 'INPUT') return;
+    const input = document.createElement('input');
+    input.className = 'inline-input';
+    input.value = '';
+    input.placeholder = 'https://...';
+    input.addEventListener('blur', () => saveEdit(el, id, 'link', input.value));
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') saveEdit(el, id, 'link', input.value); if (e.key === 'Escape') { e.preventDefault(); refreshInternshipListSoft(); } });
+    el.replaceWith(input);
+    input.focus();
+}
+
+function saveEdit(el, id, field, value) {
+    const data = { [field]: value || null };
+    if (field === 'applied_at' && value) data.applied_at = value + 'T00:00:00';
+    applyRowPatch(id, data, { label: '编辑字段' }).catch(function () {});
+}
+
+function inlineUpdate(id, field, value) {
+    const data = {};
+    if (field === 'applied_at') {
+        data[field] = value ? value + 'T00:00:00' : null;
+        data['status'] = value ? 'sent' : null;
+    } else if (field === 'status') {
+        if (value === 'pending') data['applied_at'] = null;
+        else if (['sent','offered','rejected'].includes(value) && !document.querySelector(`tr[data-id="${id}"] input.inline-date`)?.value) {
+            data['applied_at'] = new Date().toISOString().substring(0,10) + 'T00:00:00';
+        }
+        data[field] = value;
+    } else {
+        data[field] = value;
+    }
+    var label = field === 'status' ? '修改状态' : (field === 'applied_at' ? '修改投递时间' : '编辑字段');
+    applyRowPatch(id, data, { label: label }).catch(function () {});
+}
+
+// Delete
+function deleteItem(id) {
+    showConfirmModal('确认删除', '删除后无法恢复', () => {
+        api('/api/internships/' + id, { method: 'DELETE' }).then(function () {
+            var ix = allData.findIndex(function (x) { return x.id === id; });
+            if (ix >= 0) allData.splice(ix, 1);
+            listTotal = Math.max(0, (typeof listTotal === 'number' ? listTotal : allData.length) - 1);
+            selectedIds.delete(id);
+            toast('已删除');
+            refreshInternshipListSoft();
+        }).catch(function (e) { toast(e.message, 'error'); });
+    });
+}
+
+// Rounds
+function setRoundTypeSelect(sel, savedType) {
+    const allowed = ['笔试', '一面', '二面', '三面', 'HR面'];
+    sel.value = allowed.indexOf(savedType) >= 0 ? savedType : 'HR面';
+}
+
+function addRound(id) {
+    const item = allData.find(x => x.id === id);
+    const rounds = parseRounds(item.interview_rounds);
+    openModal('添加面试轮次', `
+        <form id="roundForm" class="round-modal-form">
+            <div class="form-group">
+                <label class="form-label">轮次类型</label>
+                <select class="form-select" id="rType">
+                    <option>笔试</option><option>一面</option><option>二面</option><option>三面</option><option>HR面</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">面试日期</label>
+                <input type="date" id="rDate" class="form-input">
+            </div>
+            <div class="form-group round-modal-time-only">
+                <div class="round-modal-hm-row" role="group" aria-label="时分，分钟为整十分钟">
+                    <div class="round-modal-hm-cell">
+                        <select class="form-select" id="rHour"></select>
+                    </div>
+                    <span class="round-modal-hm-colon" aria-hidden="true">:</span>
+                    <div class="round-modal-hm-cell">
+                        <select class="form-select" id="rMin"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="round-modal-submit-bar">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button type="submit" class="btn btn-primary">添加</button>
+            </div>
+        </form>`, () => {
+        document.getElementById('rDate').value = new Date().toISOString().substring(0,10);
+        populateRoundModalHourMin('10', '00');
+        if (typeof initRoundModalHmSelects === 'function') initRoundModalHmSelects(document.getElementById('modalBody'));
+        document.getElementById('roundForm').onsubmit = e => {
+            e.preventDefault();
+            const date = document.getElementById('rDate').value;
+            const hh = document.getElementById('rHour').value;
+            const mm = document.getElementById('rMin').value;
+            if (!date || hh === '' || mm === '') { toast('请完善时间信息'); return; }
+            const hm = hh + ':' + mm;
+            rounds.push({ type: document.getElementById('rType').value, time: date + 'T' + hm + ':00' });
+            api('/api/internships/' + id, { method: 'PUT', body: { interview_rounds: JSON.stringify(rounds) } })
+                .then(function (row) {
+                    mergeInternshipServerRow(row);
+                    closeModal();
+                    toast('已更新');
+                    refreshInternshipListSoft();
+                }).catch(function (err) { toast(err.message, 'error'); });
+        };
+    });
+}
+
+function editRound(id, timeStr) {
+    const item = allData.find(x => x.id === id);
+    const rounds = parseRounds(item.interview_rounds);
+    const r = rounds.find(r => r.time === timeStr);
+    if (!r) return;
+    const existingDate = r.time.split('T')[0];
+    const existingHH = r.time.split('T')[1].substring(0,2);
+    const existingMM = r.time.split('T')[1].substring(3,5);
+    openModal('编辑面试轮次', `
+        <form id="roundForm" class="round-modal-form">
+            <div class="form-group">
+                <label class="form-label">轮次类型</label>
+                <select class="form-select" id="rType">
+                    <option>笔试</option><option>一面</option><option>二面</option><option>三面</option><option>HR面</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">面试日期</label>
+                <input type="date" id="rDate" class="form-input" value="${existingDate}">
+            </div>
+            <div class="form-group round-modal-time-only">
+                <div class="round-modal-hm-row" role="group" aria-label="时分，分钟为整十分钟">
+                    <div class="round-modal-hm-cell">
+                        <select class="form-select" id="rHour"></select>
+                    </div>
+                    <span class="round-modal-hm-colon" aria-hidden="true">:</span>
+                    <div class="round-modal-hm-cell">
+                        <select class="form-select" id="rMin"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="round-modal-footer-split">
+                <button type="button" class="btn btn-danger btn-sm" onclick="delRound('${id}','${timeStr}')">删除此轮</button>
+                <div class="round-modal-footer-split-end">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </div>
+        </form>`, () => {
+        setRoundTypeSelect(document.getElementById('rType'), r.type);
+        populateRoundModalHourMin(existingHH, existingMM);
+        if (typeof initRoundModalHmSelects === 'function') initRoundModalHmSelects(document.getElementById('modalBody'));
+        document.getElementById('roundForm').onsubmit = e => {
+            e.preventDefault();
+            const date = document.getElementById('rDate').value;
+            const hh = document.getElementById('rHour').value;
+            const mm = document.getElementById('rMin').value;
+            if (!date || hh === '' || mm === '') { toast('请完善时间信息'); return; }
+            const newTime = date + 'T' + hh + ':' + mm + ':00';
+            const idx = rounds.findIndex(r => r.time === timeStr);
+            rounds[idx] = { type: document.getElementById('rType').value, time: newTime };
+            api('/api/internships/' + id, { method: 'PUT', body: { interview_rounds: JSON.stringify(rounds) } })
+                .then(function (row) {
+                    mergeInternshipServerRow(row);
+                    closeModal();
+                    toast('已更新');
+                    refreshInternshipListSoft();
+                }).catch(function (err) { toast(err.message, 'error'); });
+        };
+    });
+}
+
+function delRound(id, timeStr) {
+    const item = allData.find(x => x.id === id);
+    const rounds = parseRounds(item.interview_rounds);
+    const idx = rounds.findIndex(r => r.time === timeStr);
+    if (idx === -1) return;
+    rounds.splice(idx, 1);
+    api('/api/internships/' + id, { method: 'PUT', body: { interview_rounds: JSON.stringify(rounds) } })
+        .then(function (row) {
+            mergeInternshipServerRow(row);
+            closeModal();
+            toast('已删除');
+            refreshInternshipListSoft();
+        }).catch(function (err) { toast(err.message, 'error'); });
+}
+
+function escAttr(s) { return String(s||'').replace(/'/g,'&#39;'); }
+
+// ── Countdown (from original offerflow) ──
+var countdownInterval = null;
+
+function getNearestInterview(roundsJson) {
+    var rounds = [];
+    try { rounds = roundsJson ? JSON.parse(roundsJson) : []; } catch(e) { rounds = []; }
+    var now = new Date();
+    var nearest = null;
+    var nearestDate = null;
+    for (var i = 0; i < rounds.length; i++) {
+        if (!rounds[i].time) continue;
+        var timeStr = rounds[i].time;
+        var d;
+        if (timeStr.includes('T')) { d = new Date(timeStr); }
+        else { d = new Date(timeStr + 'T00:00:00'); }
+        if (d >= now && (!nearestDate || d < nearestDate)) {
+            nearestDate = d;
+            nearest = rounds[i];
+        }
+    }
+    return nearest ? { round: nearest, date: nearestDate } : null;
+}
+
+function getCountdown(date) {
+    var now = new Date();
+    var diff = date - now;
+    if (diff < 0) return { text: '已结束', class: 'countdown-passed' };
+    var MS_DAY = 86400000;
+    if (diff < COUNTDOWN_24H_MS) {
+        var totalSec = Math.floor(diff / 1000);
+        var h = Math.floor(totalSec / 3600);
+        var m = Math.floor((totalSec % 3600) / 60);
+        var s = totalSec % 60;
+        return { text: h + '时' + m + '分' + s + '秒', class: 'countdown-urgent' };
+    }
+    var days = diff / MS_DAY;
+    var remainingDays = Math.floor(days);
+    var hours = Math.floor((diff % MS_DAY) / 3600000);
+    var minutes = Math.floor((diff % 3600000) / 60000);
+    if (days > 3) {
+        return { text: remainingDays + '天' + hours + '时' + minutes + '分', class: '' };
+    }
+    return { text: remainingDays + '天' + hours + '时' + minutes + '分', class: 'countdown-warning' };
+}
+
+function updateCountdowns() {
+    var rows = document.querySelectorAll('tr[data-id]');
+    var now = new Date();
+    for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        var id = row.dataset.id;
+        var item = allData.find(function(d) { return d.id === id; });
+        if (!item) continue;
+        var nearest = getNearestInterview(item.interview_rounds);
+        var countdownEl = row.querySelector('.countdown-cell');
+        if (!countdownEl) continue;
+        if (!nearest) {
+            countdownEl.innerHTML = '<span class="countdown-text">-</span>';
+            countdownEl.className = 'countdown-cell';
+        } else {
+            var cd = getCountdown(nearest.date);
+            countdownEl.innerHTML = '<span class="countdown-text ' + cd.class + '">' + cd.text + '</span>';
+            countdownEl.className = 'countdown-cell';
+        }
+        syncRoundTagClasses(row.querySelector('.rounds-container'), now);
+    }
+}
+
+function startCountdown() {
+    if (countdownInterval) clearInterval(countdownInterval);
+    updateCountdowns();
+    countdownInterval = setInterval(updateCountdowns, 1000);
+}
+
+function ctxShow(e, id) {
+    e.preventDefault();
+    e.stopPropagation();
+    const item = allData.find(x => x.id === id);
+    if (!item) return;
+    const isPinned = item.pinned;
+    const isDone = item.status === 'offered' || item.status === 'rejected';
+    const hasLink = !!(item.link && String(item.link).trim());
+    showCtx(e.clientX, e.clientY, [
+        { label: isPinned ? '置顶到最前' : '置顶', action: 'pin,' + id },
+        isPinned ? { label: '取消置顶', action: 'unpin,' + id } : null,
+        { label: '编辑信息', action: 'edit,' + id },
+        { label: '添加面试轮次', action: 'addround,' + id },
+        { label: '复制岗位链接', action: 'copylink,' + id, disabled: !hasLink },
+        { divider: true },
+        isDone ? null : { label: '删除', action: 'delete,' + id, danger: true },
+    ].filter(x => x));
+    window.ctxCallback = (action) => {
+        const act = action.split(',')[0];
+        const uid = action.indexOf(',') >= 0 ? action.slice(action.indexOf(',') + 1) : '';
+        if (act === 'edit') openInternshipEditModal(item);
+        else if (act === 'addround') addRound(uid);
+        else if (act === 'pin') api('/api/internships/' + uid + '/pin?mode=top', {method:'POST'}).then(function(row){ mergeInternshipServerRow(row); refreshInternshipListSoft(); toast(isPinned ? '已移到置顶最前' : '已置顶'); }).catch(e=>toast(e.message,'error'));
+        else if (act === 'unpin') api('/api/internships/' + uid + '/pin?mode=off', {method:'POST'}).then(function(row){ mergeInternshipServerRow(row); refreshInternshipListSoft(); toast('已取消置顶'); }).catch(e=>toast(e.message,'error'));
+        else if (act === 'copylink') {
+            var link = item.link ? String(item.link).trim() : '';
+            if (!link) { toast('无链接可复制', 'warning'); return; }
+            copyTextToClipboard(link).then(function () { toast('链接已复制', 'success'); }).catch(function () { toast('复制失败，请手动复制链接', 'error'); });
+        }
+        else if (act === 'delete') deleteItem(uid);
+    };
+}
+
+function openInternshipEditModal(item) {
+    if (!item || !item.id) return;
+    openModal('编辑实习投递', `<form id="internEditForm" style="display:flex;flex-direction:column;gap:14px;">
+        <div class="form-row"><div class="form-group"><label class="form-label">公司 *</label><input type="text" class="form-input" id="ieCompany" required></div>
+        <div class="form-group"><label class="form-label">岗位</label><input type="text" class="form-input" id="iePosition" placeholder="选填"></div></div>
+        <div class="form-group"><label class="form-label">岗位链接</label><input type="url" class="form-input" id="ieLink" placeholder="https://..."></div>
+        <div class="form-group"><label class="form-label">岗位描述</label><textarea class="form-input" id="ieDescription" rows="3" placeholder="选填，悬停表格「公司/岗位」可查看"></textarea></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">优先级</label><select class="form-select" id="iePriority"><option value="top">顶级</option><option value="elite">人上人</option><option value="hang">夯</option><option value="npc">NPC</option><option value="done">拉完了</option></select></div>
+        <div class="form-group"><label class="form-label">薪资</label><input type="text" class="form-input" id="ieSalary" placeholder="如：400/天"></div></div>
+        <div class="form-group"><label class="form-label">状态</label><select class="form-select" id="ieStatus"><option value="pending">未投递</option><option value="sent">已投递</option><option value="offered">拿到offer</option><option value="rejected">已被拒</option></select></div>
+        <div class="form-group"><label class="form-label">备注</label><textarea class="form-input" id="ieRemarks" rows="2"></textarea></div>
+        <div class="modal-footer" style="padding:0"><button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button><button type="submit" class="btn btn-primary" id="internEditSubmitBtn">保存</button></div>
+    </form>`, function () {
+        var id = item.id;
+        document.getElementById('ieCompany').value = item.company || '';
+        document.getElementById('iePosition').value = item.position || '';
+        document.getElementById('ieLink').value = item.link || '';
+        document.getElementById('ieDescription').value = item.description || '';
+        document.getElementById('iePriority').value = item.priority || 'hang';
+        document.getElementById('ieSalary').value = item.salary || '';
+        document.getElementById('ieStatus').value = (item.status === 'replied' ? 'sent' : item.status) || 'pending';
+        document.getElementById('ieRemarks').value = item.remarks || '';
+        var submitBtn = document.getElementById('internEditSubmitBtn');
+        function validateEdit() {
+            var company = document.getElementById('ieCompany');
+            var err = company.parentNode.querySelector('.field-error');
+            if (err) err.remove();
+            if (!company.value.trim()) {
+                company.style.borderColor = 'var(--danger)';
+                var div = document.createElement('div');
+                div.className = 'field-error';
+                div.textContent = '公司不能为空';
+                company.parentNode.appendChild(div);
+                submitBtn.disabled = true;
+            } else {
+                company.style.borderColor = '';
+                submitBtn.disabled = false;
+            }
+        }
+        ['blur', 'input'].forEach(function (evt) {
+            document.getElementById('ieCompany').addEventListener(evt, validateEdit);
+        });
+        validateEdit();
+        document.getElementById('internEditForm').onsubmit = function (e) {
+            e.preventDefault();
+            if (submitBtn.disabled) return;
+            var status = document.getElementById('ieStatus').value;
+            var appliedAt = document.getElementById('ieDate').value;
+            var payload = {
+                company: document.getElementById('ieCompany').value.trim(),
+                position: document.getElementById('iePosition').value.trim(),
+                link: document.getElementById('ieLink').value.trim() || null,
+                description: document.getElementById('ieDescription').value.trim() || null,
+                priority: document.getElementById('iePriority').value,
+                salary: document.getElementById('ieSalary').value.trim() || null,
+                remarks: document.getElementById('ieRemarks').value.trim() || null,
+            };
+            if (status === 'pending') {
+                payload.applied_at = null;
+            } else if (appliedAt) {
+                payload.applied_at = appliedAt + 'T00:00:00';
+            } else if (['sent', 'offered', 'rejected'].indexOf(status) >= 0) {
+                payload.applied_at = new Date().toISOString().substring(0, 10) + 'T00:00:00';
+            } else {
+                payload.applied_at = null;
+            }
+            api('/api/internships/' + id, { method: 'PUT', body: payload }).then(function (row) {
+                mergeInternshipServerRow(row);
+                toast('已更新');
+                closeModal();
+                refreshInternshipListSoft();
+            }).catch(function (err) {
+                toast(err.message || '保存失败', 'error');
+            });
+        };
+    });
+}
+
+function openInternshipForm() {
+    openModal('新增实习投递', `<form id="internForm" style="display:flex;flex-direction:column;gap:14px;">
+        <div class="form-row"><div class="form-group"><label class="form-label">公司 *</label><input type="text" class="form-input" id="fCompany" required></div>
+        <div class="form-group"><label class="form-label">岗位</label><input type="text" class="form-input" id="fPosition" placeholder="选填"></div></div>
+        <div class="form-group"><label class="form-label">岗位链接</label><input type="url" class="form-input" id="fLink" placeholder="https://..."></div></div>
+        <div class="form-group"><label class="form-label">岗位描述</label><textarea class="form-input" id="fDescription" rows="3" placeholder="选填，悬停表格「公司/岗位」可查看"></textarea></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">优先级</label><select class="form-select" id="fPriority"><option value="top">顶级</option><option value="elite">人上人</option><option value="hang">夯</option><option value="npc">NPC</option><option value="done">拉完了</option></select></div>
+        <div class="form-group"><label class="form-label">薪资</label><input type="text" class="form-input" id="fSalary" placeholder="如：400/天"></div></div>
+        <div class="form-group"><label class="form-label">投递日期</label><input type="date" class="form-input" id="fDate" placeholder="填写后自动变为已投递"></div></div>
+        <div class="modal-footer" style="padding:0"><button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button><button type="submit" class="btn btn-primary" id="internSubmitBtn">添加</button></div>
+    </form>`, () => {
+        var submitBtn = document.getElementById('internSubmitBtn');
+        function validateForm() {
+            var company = document.getElementById('fCompany');
+            var err = company.parentNode.querySelector('.field-error');
+            if (err) err.remove();
+            if (!company.value.trim()) {
+                company.style.borderColor = 'var(--danger)';
+                var div = document.createElement('div');
+                div.className = 'field-error';
+                div.textContent = '公司不能为空';
+                company.parentNode.appendChild(div);
+                submitBtn.disabled = true;
+            } else {
+                company.style.borderColor = '';
+                submitBtn.disabled = false;
+            }
+        }
+        ['blur', 'input'].forEach(function(evt) {
+            document.getElementById('fCompany').addEventListener(evt, validateForm);
+        });
+        document.getElementById('internForm').onsubmit = e => {
+            e.preventDefault();
+            if (submitBtn.disabled) return;
+            const data = {
+                company: document.getElementById('fCompany').value.trim(),
+                position: document.getElementById('fPosition').value.trim(),
+                link: document.getElementById('fLink').value.trim() || null,
+                description: document.getElementById('fDescription').value.trim() || null,
+                priority: document.getElementById('fPriority').value,
+                salary: document.getElementById('fSalary').value.trim() || null,
+                remarks: document.getElementById('fRemarks').value.trim() || null
+            };
+            const appliedAt = document.getElementById('fDate').value;
+            if (appliedAt) {
+                data.applied_at = appliedAt + 'T00:00:00';
+                data.status = 'sent';
+            }
+            api('/api/internships', { method: 'POST', body: data }).then(function () {
+                toast('已添加');
+                closeModal();
+                loadData({ soft: true });
+            }).catch(e => toast(e.message, 'error'));
+        };
+    });
+}
+
+// ── 飞书式批量管理 ──
+function updateBatchMeta() {
+    var el = document.getElementById('batchMeta');
+    if (!el) return;
+    el.textContent = listTotal ? ('共 ' + listTotal + ' 条 · 本页 ' + allData.length + ' 条') : '';
+}
+
+function exitBatchMode() {
+    selectedIds.clear();
+    lastAnchorIndex = null;
+    updateBatchUI();
+}
+
+function handleRowClickBatch(ev, id, index) {
+    if (ev.target.closest && ev.target.closest('a,button,select,input,textarea,.rounds-container,.inline-editable')) return;
+    if (ev.shiftKey && lastAnchorIndex !== null && lastAnchorIndex !== index) {
+        var lo = Math.min(lastAnchorIndex, index);
+        var hi = Math.max(lastAnchorIndex, index);
+        var anchorOn = selectedIds.has(allData[lastAnchorIndex].id);
+        for (var j = lo; j <= hi; j++) {
+            if (anchorOn) selectedIds.add(allData[j].id);
+            else selectedIds.delete(allData[j].id);
+        }
+    } else {
+        if (selectedIds.has(id)) selectedIds.delete(id);
+        else selectedIds.add(id);
+        lastAnchorIndex = index;
+    }
+    updateBatchUI();
+}
+
+function onRowCheckClick(ev, el) {
+    ev.stopPropagation();
+    var id = el.dataset.id;
+    var index = parseInt(el.dataset.rowIndex, 10);
+    var checked = el.checked;
+    if (ev.shiftKey && lastAnchorIndex !== null && lastAnchorIndex !== index) {
+        var lo = Math.min(lastAnchorIndex, index);
+        var hi = Math.max(lastAnchorIndex, index);
+        for (var j = lo; j <= hi; j++) {
+            if (checked) selectedIds.add(allData[j].id);
+            else selectedIds.delete(allData[j].id);
+        }
+        syncRowCheckboxes();
+    } else {
+        if (checked) selectedIds.add(id);
+        else selectedIds.delete(id);
+        lastAnchorIndex = index;
+    }
+    updateBatchUI();
+}
+
+function onCheckAllClick(ev, el) {
+    ev.stopPropagation();
+    var checked = el.checked;
+    if (checked) allData.forEach(function(x) { selectedIds.add(x.id); });
+    else allData.forEach(function(x) { selectedIds.delete(x.id); });
+    lastAnchorIndex = null;
+    syncRowCheckboxes();
+    updateBatchUI();
+}
+
+function syncRowCheckboxes() {
+    document.querySelectorAll('.row-check').forEach(function(cb) {
+        cb.checked = selectedIds.has(cb.dataset.id);
+    });
+}
+
+function syncHeaderCheckbox() {
+    var ca = document.getElementById('checkAll');
+    if (!ca || !allData.length) {
+        if (ca) { ca.checked = false; ca.indeterminate = false; }
+        return;
+    }
+    var selOnPage = allData.filter(function(x) { return selectedIds.has(x.id); }).length;
+    ca.checked = selOnPage === allData.length;
+    ca.indeterminate = selOnPage > 0 && selOnPage < allData.length;
+}
+
+function selectAllOnPage() {
+    allData.forEach(function(x) { selectedIds.add(x.id); });
+    lastAnchorIndex = null;
+    syncRowCheckboxes();
+    updateBatchUI();
+}
+
+function clearPageSelection() {
+    allData.forEach(function(x) { selectedIds.delete(x.id); });
+    lastAnchorIndex = null;
+    syncRowCheckboxes();
+    updateBatchUI();
+}
+
+function updateBatchUI() {
+    var cnt = selectedIds.size;
+    var bc = document.getElementById('batchCount');
+    if (bc) bc.textContent = cnt;
+    var tb = document.getElementById('batchToolbar');
+    var root = document.getElementById('batchPageRoot');
+    if (cnt > 0) {
+        if (tb) tb.classList.add('active');
+        if (root) root.classList.add('batch-bar-visible');
+    } else {
+        if (tb) tb.classList.remove('active');
+        if (root) root.classList.remove('batch-bar-visible');
+    }
+    document.querySelectorAll('tr[data-id]').forEach(function(row) {
+        row.classList.toggle('row-selected', selectedIds.has(row.dataset.id));
+    });
+    syncHeaderCheckbox();
+}
+
+function batchPinRows(v) {
+    if (selectedIds.size === 0) return;
+    var ids = Array.from(selectedIds);
+    var wantPin = !!v;
+    var chain = Promise.resolve();
+    ids.forEach(function(id) {
+        chain = chain.then(function() {
+            var item = allData.find(function(x) { return x.id === id; });
+            if (!item) return;
+            if (!!item.pinned === wantPin) return;
+            return api('/api/internships/' + id + '/pin', { method: 'POST' }).then(function(row) {
+                mergeInternshipServerRow(row);
+            });
+        });
+    });
+    chain
+        .then(function() { toast(v ? '已置顶' : '已取消置顶'); refreshInternshipListSoft(); })
+        .catch(function(e) { toast(e.message || '操作失败', 'error'); });
+}
+
+function batchDelete() {
+    if (selectedIds.size === 0) return;
+    showConfirmModal('确认批量删除', '将删除 ' + selectedIds.size + ' 条记录，删除后无法恢复', function() {
+        api('/api/internships/batch', { method: 'POST', body: { ids: Array.from(selectedIds), delete: true } })
+            .then(function() {
+                toast('已删除');
+                exitBatchMode();
+                loadData({ soft: true });
+            }).catch(function(e) { toast(e.message, 'error'); });
+    });
+}
+
+initInternshipsPage();
+</script>
+{% endblock %}
+

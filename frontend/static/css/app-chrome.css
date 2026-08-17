@@ -1,0 +1,79 @@
+/* 全站：页面切换瞬时反馈（配合 Turbo + offerflow-perf.js） */
+html.of-page-busy .page {
+  opacity: 0.92;
+  transition: opacity 0.12s var(--ease, ease);
+}
+
+html:not(.of-page-busy) .page {
+  transition: opacity 0.18s var(--ease, ease);
+}
+
+/* 长列表：延迟布局，滚动更顺滑（岗位速递网格在首屏绘制时关闭，避免卡片抖动） */
+.lounge-feed .lounge-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 168px;
+}
+
+.job-link-grid:not(.job-link-grid--settled) .job-link-card {
+  content-visibility: visible;
+}
+
+.job-link-grid.job-link-grid--settled .job-link-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 168px;
+}
+
+/* 全站：预览访客条、会员升级提示 */
+html.is-preview-guest .preview-guest-banner {
+  margin: 0 20px 0;
+  padding: 0;
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+.preview-guest-banner {
+  margin: 0 20px 0;
+  padding: 0;
+}
+
+.job-link-grid--loading {
+  opacity: 0.72;
+  pointer-events: none;
+  transition: opacity 0.15s var(--ease, ease);
+}
+
+.job-link-grid--settled .job-link-card {
+  opacity: 1;
+}
+
+.preview-guest-banner__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--warning-bg) 85%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--warning) 25%, var(--border-light));
+}
+
+.preview-guest-banner__text {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.preview-guest-banner__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.preview-guest-banner__actions .btn {
+  padding: 8px 14px;
+  font-size: 0.8125rem;
+  border-radius: var(--radius-sm);
+}

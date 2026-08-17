@@ -1,0 +1,274 @@
+/* OfferFlow Toast — 主题色统一 · 丝滑动效 */
+
+.toast-container {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none;
+  max-width: min(400px, calc(100vw - 32px));
+}
+
+.toast {
+  --toast-ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+  --toast-ease-leave: cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: min(300px, calc(100vw - 48px));
+  max-width: 100%;
+  padding: 15px 18px 18px;
+  pointer-events: auto;
+  border-radius: 16px;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--surface) 96%, var(--primary-light)) 0%,
+    color-mix(in srgb, var(--surface) 90%, transparent) 55%,
+    color-mix(in srgb, var(--surface) 92%, var(--primary-light)) 100%
+  );
+  backdrop-filter: blur(20px) saturate(1.35);
+  -webkit-backdrop-filter: blur(20px) saturate(1.35);
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #fff 80%, transparent) inset,
+    0 20px 44px -18px color-mix(in srgb, var(--primary) 28%, transparent),
+    0 12px 32px -12px rgba(15, 23, 42, 0.14),
+    0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent);
+  overflow: hidden;
+  cursor: default;
+  user-select: none;
+  will-change: transform, opacity, filter;
+  transform: translate3d(40px, 10px, 0) scale(0.97);
+  opacity: 0;
+  filter: blur(6px);
+}
+
+.toast.is-visible {
+  animation: toast-enter 0.72s var(--toast-ease-enter) forwards;
+}
+
+.toast.is-leaving {
+  animation: toast-leave 0.48s var(--toast-ease-leave) forwards;
+  pointer-events: none;
+}
+
+/* 单次缓出，无回弹，更丝滑 */
+@keyframes toast-enter {
+  0% {
+    transform: translate3d(40px, 10px, 0) scale(0.97);
+    opacity: 0;
+    filter: blur(6px);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes toast-leave {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: translate3d(32px, 6px, 0) scale(0.98);
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+.toast__glow {
+  position: absolute;
+  inset: -30% -15% auto -15%;
+  height: 110%;
+  background: radial-gradient(
+    ellipse 85% 70% at 18% 0%,
+    color-mix(in srgb, var(--primary) 20%, transparent) 0%,
+    color-mix(in srgb, var(--primary-light) 12%, transparent) 40%,
+    transparent 72%
+  );
+  pointer-events: none;
+  opacity: 0;
+  animation: toast-glow-in 0.85s var(--toast-ease-enter) 0.04s forwards;
+}
+
+@keyframes toast-glow-in {
+  to { opacity: 1; }
+}
+
+.toast__icon-wrap {
+  position: relative;
+  z-index: 1;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  background: linear-gradient(145deg, var(--primary) 0%, var(--primary-hover) 100%);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary-active) 35%, transparent),
+    0 6px 16px -6px color-mix(in srgb, var(--primary) 50%, transparent);
+  transform: scale(0.88);
+  opacity: 0;
+  animation: toast-icon-in 0.65s var(--toast-ease-enter) 0.08s forwards;
+}
+
+@keyframes toast-icon-in {
+  0% {
+    transform: scale(0.88);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.toast__icon-wrap svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+}
+
+.toast__body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  transform: translateY(4px);
+  opacity: 0;
+  animation: toast-text-in 0.6s var(--toast-ease-enter) 0.1s forwards;
+}
+
+@keyframes toast-text-in {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.toast__message {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.toast-undo {
+  position: relative;
+  z-index: 1;
+  margin-left: 4px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary-active);
+  background: color-mix(in srgb, var(--primary-light) 65%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease-spring);
+}
+
+.toast-undo:hover {
+  background: var(--primary-light);
+  transform: scale(1.03);
+}
+
+.toast__progress {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--primary) 12%, var(--border-light));
+}
+
+.toast__progress > span {
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    var(--primary-active),
+    var(--primary),
+    color-mix(in srgb, var(--primary) 65%, var(--primary-light))
+  );
+  border-radius: inherit;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 40%, transparent);
+  animation: toast-progress linear forwards;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes toast-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+/* 各类型仅区分图标图形，配色统一主题色 */
+.toast.toast-success,
+.toast.toast-error,
+.toast.toast-warning,
+.toast.toast-info {
+  /* 继承 .toast 主题样式，无额外色板 */
+}
+
+@media (max-width: 480px) {
+  .toast-container {
+    right: 16px;
+    left: 16px;
+    bottom: 20px;
+    align-items: stretch;
+    max-width: none;
+  }
+
+  .toast {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast.is-visible,
+  .toast.is-leaving,
+  .toast__icon-wrap,
+  .toast__glow,
+  .toast__body,
+  .toast__progress > span {
+    animation: none;
+    filter: none;
+    transition: none;
+  }
+
+  .toast {
+    transform: none;
+    opacity: 1;
+  }
+
+  .toast__icon-wrap,
+  .toast__body {
+    transform: none;
+    opacity: 1;
+  }
+
+  .toast.is-leaving {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+}

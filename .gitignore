@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+.env
+.env.*
+!.env.example
+.env.slowapi
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local data & logs（保留 data/.gitkeep 方便 Docker 挂载）
+*.db
+*.db-journal
+data/*
+!data/.gitkeep
+logs/
+
+# Backup / temp
+*.bak
+*.bak2
+_tmp_*
+_patch_*.py
+.ai_assistant_watch.lock
