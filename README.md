@@ -9,7 +9,7 @@
 
 在此之外，它还是一套本地优先的实习 / 校招投递管理工具：表格跟踪进度、面试倒计时与日历视图，数据存在本机 SQLite，无需注册登录。
 
-![校招投递页面截图](https://cdn.jsdelivr.net/gh/Xiangyahaian/offerflow@main/docs/screenshots/campus.png)
+![校招投递页面截图](https://cdn.jsdelivr.net/gh/Xiangyahaian/offerflow@8e1b231ad20fd4c6a6fae880a1488cac86b61736/docs/screenshots/campus.png)
 
 ## Features
 
