@@ -9,11 +9,11 @@
 
 在此之外，它还是一套本地优先的实习 / 校招投递管理工具：表格跟踪进度、面试倒计时与日历视图，数据存在本机 SQLite，无需注册登录。
 
-![校招投递页面截图](docs/screenshots/campus.png)
+![校招投递页面截图](https://cdn.jsdelivr.net/gh/Xiangyahaian/offerflow@main/docs/screenshots/campus.png)
 
 ## Features
 
-- **AI 邮箱解析（主打）**：IMAP 拉取求职邮件 → AI 提取关键信息 → 自动创建 / 更新投递记录
+- **AI 邮箱解析**：IMAP 拉取求职邮件 → AI 提取关键信息 → 自动创建 / 更新投递记录
 - **实习 / 校招投递**：状态流转、优先级、面试轮次、倒计时、拖拽排序与批量操作
 - **工作台**：投递总量、待处理事项与 Offer 概览
 - **日历视图**：集中查看笔试 / 面试安排
